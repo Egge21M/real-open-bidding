@@ -1,0 +1,18 @@
+# Build from the repository root so the source specifications are included.
+# Only the website's build inputs are sent to the builder.
+*
+!FLOW.md
+!OPENRTB.md
+!website/
+website/*
+!website/package.json
+!website/package-lock.json
+!website/tsconfig*.json
+!website/vite.config.ts
+!website/index.html
+!website/src/
+!website/src/**
+!website/public/
+!website/public/**
+!website/Dockerfile
+!website/nginx.conf
