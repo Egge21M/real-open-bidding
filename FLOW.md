@@ -68,9 +68,11 @@ The publisher describes an HTML banner opportunity in an OpenRTB-like request an
 - A nonempty `mints` array of Cashu mint URLs accepted by the publisher.
 - The chosen oracle's identity and payment public key.
 - The oracle's pixel base URL, `oracle_pixel_base`.
-- A unique request/auction ID, `request_id`, and the opportunity's `impression_id`.
+- The opportunity's `impression_id`.
 
 The publisher discloses its accepted mints and oracle before bidders commit funds. Each bidder chooses one listed mint. The refund deadline is chosen by each bidder, not assigned by the request. Auction requests use experimental ephemeral kind `28300` with JSON in `content`; complete schemas and discovery rules remain open. [NIP-01](https://github.com/nostr-protocol/nips/blob/master/01.md) supplies the underlying publication/subscription mechanism.
+
+**Agreed 2026-09-21:** `bid_request_id` is the stable identifier of the auction's exact published bid request: the `id` of its signed Nostr `28300` event. It is read from the event envelope and is not embedded in that request's own content. Retransmitting the same event preserves `bid_request_id`; changing the signed event contents creates a new ID and is treated as a new auction. Bids, pixel callbacks, commitments, and payment authorizations use `bid_request_id` to refer to that original request. The pair `(bid_request_id, impression_id)` identifies one offered ad opportunity.
 
 ## 2. Bidders evaluate the opportunity
 
@@ -92,7 +94,7 @@ ROB always uses first-price pricing: the winner pays its full bid amount before 
 
 The publisher renders the winning HTML banner payload unchanged, including the bidder-inserted pixel. It does not inject tracking code or substitute placeholders after signing.
 
-In the intended flow, the viewer's browser requests the pixel over HTTP. The oracle records the callback by request ID, impression ID, and bid nonce. It can record callbacks before receiving the authorization request and match them later; no bidder registration or extra publisher-to-oracle coordination message is required.
+In the intended flow, the viewer's browser requests the pixel over HTTP. The oracle records the callback by `bid_request_id`, `impression_id`, and `bid_nonce`. It can record callbacks before receiving the authorization request and match them later; no bidder registration or extra publisher-to-oracle coordination message is required.
 
 ## 6. Publisher requests oracle authorization
 
@@ -109,10 +111,19 @@ The oracle:
 2. Hashes the exact original token string with SHA-256 over its UTF-8 bytes and compares the lowercase hex result with the signed `payment_hash`, without re-encoding the token for hashing.
 3. Hashes the submitted creative, reconstructs the bid context, and verifies the BIP-340 commitment signature using the extracted refund key. The signed Nostr public key is part of the message, not the verification key. The commitment establishes authorization by the refund-key holder; it does not by itself prove that the named Nostr identity sent the bid.
 4. Checks that the proposed spending transaction uses exactly those committed proofs at the committed mint, without substituting, omitting, duplicating, or adding inputs. Matching a separately submitted token is insufficient if the transaction's inputs differ.
-5. Checks the embedded pixel URL against the declared base URL, request/impression IDs, and signed bid nonce.
+5. Checks the embedded pixel URL against the declared base URL, `bid_request_id`, `impression_id`, and signed `bid_nonce`.
 6. Finds a recorded callback matching that URL.
+7. Enforces the single-bid authorization rule below for `(bid_request_id, impression_id)`.
 
 Only after all checks pass does the oracle sign and return the proposed spend. A callback for one bid must not authorize another bid or payment, and repeated callbacks are not additional payable impressions. An absent callback prevents authorization even if the creative was displayed. Transaction signing is described under [SIG_ALL settlement](#sig_all-settlement).
+
+### One authorized bid per impression
+
+**Agreed 2026-09-21:** for each `(bid_request_id, impression_id)`, the oracle MUST authorize payment for at most one bid commitment. After the other checks pass, it atomically and durably binds that opportunity to the commitment and its original payment proofs before releasing a signature. Concurrent requests cannot authorize different bids for the same opportunity, and the binding survives oracle restarts. A callback alone, an invalid authorization request, or a request without a matching callback does not assign the opportunity.
+
+An exact authorization retry returns the existing authorization. Retries remain bound to the same commitment and original payment proofs; authorizing a different bid is forbidden once authorization has been issued. Settlement failure, a timeout, or refund eligibility does not release this binding. V1 allows no switch to another bid after the oracle signs. Detailed transaction-retry and storage/retention rules remain to be specified without weakening this invariant.
+
+The publisher still selects the winner. This rule limits authorization for one declared opportunity; it does not verify auction fairness or establish whether multiple declared opportunities refer to the same physical placement.
 
 ## 7. Publisher completes settlement
 
@@ -199,13 +210,13 @@ Banner dimensions and compatibility fields, markup size limits, allowed HTML/CSS
 The bidder inserts the pixel **when creating the bid, before hashing and signing**. A reusable template may have a placeholder, but the submitted creative contains the completed URL:
 
 ```text
-{oracle_pixel_base}/{request_id}/{impression_id}/{bid_nonce}
+{oracle_pixel_base}/{bid_request_id}/{impression_id}/{bid_nonce}
 ```
 
-The request supplies the base URL and request/impression IDs. The bidder generates a fresh, unique `bid_nonce` to distinguish bids for the same impression. It is separate from the Cashu proof nonce and is not secret. Append URL-encoded identifier path segments to a base URL without a trailing slash, query string, or fragment.
+The request content supplies `oracle_pixel_base` and `impression_id`; its signed event envelope supplies `bid_request_id`. The bidder generates a fresh, unique `bid_nonce` to distinguish bids for the same impression. It is separate from the Cashu proof nonce and is not secret. Append URL-encoded identifier path segments to a base URL without a trailing slash, query string, or fragment.
 
 ```html
-<img src="https://oracle.example/pixel/request-123/imp-1/bid-456" width="1" height="1" alt="">
+<img src="https://oracle.example/pixel/0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef/imp-1/bid-456" width="1" height="1" alt="">
 ```
 
 The full URL is covered by the creative hash. The POC uses this single convention; method negotiation and verification profiles are outside its scope.
@@ -255,7 +266,7 @@ The agreed construction is:
 paymentHash = SHA256(UTF8(payment))
 creativeHashBytes = SHA256(UTF8(creative.content))
 contextHash = SHA256(Encode(
-    requestReference,
+    bid_request_id,
     impressionId,
     bidNonce,
     creativeType
@@ -271,7 +282,7 @@ signature = BIP340Sign(refundPrivateKey, digest)
 
 The tag is exactly the UTF-8 string `ROB/commitment/v1`, without quotes or a terminator. The construction is BIP-340-style tagged hashing and separates ROB commitments from other messages signed with the refund key. Pass the resulting 32-byte `digest` directly to the BIP-340 signing/verification API; do not add another application-level hash. The signature is 64 bytes, represented as 128 lowercase hexadecimal characters in JSON. The ROB tag labels the commitment construction; it does not settle the auction payload's version field. [BIP-340: Tagged Hashes](https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki#design).
 
-`Encode(...)` remains unspecified. The exact request reference, context serialization, and final JSON field names/nesting must still be defined before producing interoperable wire messages or complete test vectors. The context must identify the original request, its impression, the bid nonce, and the creative type; verification must also match the original signed request, publisher/oracle payment keys, accepted mint, and gross amount against the token and bid. These checks cannot be replaced by accepting a publisher-supplied context hash.
+`Encode(...)` remains unspecified. The request reference is `bid_request_id`, the original signed bid-request event's ID; context serialization and the remaining JSON field names/nesting must still be defined before producing interoperable wire messages or complete test vectors. The context must identify the original request, its impression, the bid nonce, and the creative type; verification must also match the original signed request, publisher/oracle payment keys, accepted mint, and gross amount against the token and bid. These checks cannot be replaced by accepting a publisher-supplied context hash.
 
 #### Transport identity, privacy, and spending
 
@@ -295,18 +306,20 @@ These are open questions, not additional protocol decisions:
 
 | Area | Remaining work |
 | --- | --- |
-| Message formats | OpenRTB field reuse; remaining ROB keys, nesting, references, amount, pixel base URL, and identifiers. HTML banner markup as a string is the only v1 creative format; the request's `mints` array and bid's V4 token `payment` string are agreed. |
+| Message formats | OpenRTB field reuse; remaining ROB keys, nesting, amount, pixel base URL, and impression/bid-nonce encodings. `bid_request_id` is the signed bid-request event's ID. HTML banner markup as a string is the only v1 creative format; the request's `mints` array and bid's V4 token `payment` string are agreed. |
 | HTML banners | Dimension and compatibility fields, markup size limits, allowed HTML/CSS/JavaScript, and renderer isolation. Other media types and URL-only creative responses are outside v1. |
 | Transport | Relay discovery, final inner bid tags, gift-wrap interoperability, duplicates, and publisher-to-oracle transport. Request kind `28300` and NIP-59 ephemeral wrapping of bid kind `28301` are agreed. |
 | Identity and keys | Publisher/oracle identity-to-payment-key binding, recipient-key selection, oracle contact/discovery, and key changes. Refund-key commitment verification and the separate Nostr sender check are agreed. |
 | Auction rules | Auction duration policy, selection, and ties; first-price pricing and `closes_at` in Unix seconds are agreed. |
 | Cashu validation | Mint capability checks; genuine, unspent proofs with the required mint, unit, amount, and lock; prevention of proof reuse across bids. |
-| Signed commitment | Context serialization and request reference, final JSON schema, and replay/deduplication rules. Fresh refund-key BIP-340 signatures, the tagged digest construction, signed bidder identity, exact-token payment hashing, and exact UTF-8 HTML creative hashing are agreed. |
-| Callback handling | Retention/expiry, duplicates, binding a callback to one committed payment, and late-arrival retries. |
+| Signed commitment | Context serialization, remaining JSON schema, and replay/deduplication rules. `bid_request_id` fixes the original request reference. Fresh refund-key BIP-340 signatures, the tagged digest construction, signed bidder identity, exact-token payment hashing, and exact UTF-8 HTML creative hashing are agreed. |
+| Callback handling | Retention/expiry, duplicates, binding a callback to one committed payment, and late-arrival retries. At most one bid commitment may be authorized per `(bid_request_id, impression_id)`; retries cannot authorize another bid. |
 | Joint signing | Exact swap/melt operation, transaction construction, output control, and retry behavior. |
 | Refund implementation | Scheduling, mint outages, pending spends, and retries. |
 
 ## Technical references
+
+The stable bid-request identifier `bid_request_id`, defined as the signed Nostr bid-request event's ID, and at most one authorized bid commitment per `(bid_request_id, impression_id)` were agreed on 2026-09-21. V1 permits no switch to another bid after the oracle signs.
 
 HTML banners as the sole v1 creative format were agreed on 2026-09-16 after reviewing Prebid's media-specific payloads. The decision covers inline HTML markup and the existing bidder-inserted pixel flow; other creative formats are deferred.
 
