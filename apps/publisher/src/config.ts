@@ -85,13 +85,15 @@ export function validateConfig(
     for (const keyset of mint.keysets) {
       if (ids.has(keyset.id)) throw new Error("Duplicate keyset");
       ids.add(keyset.id);
-      const entries = Object.entries(keyset.keys).sort(
-        (a, b) => Number(a[0]) - Number(b[0]),
+      const entries = Object.entries(keyset.keys).sort((a, b) =>
+        BigInt(a[0]) < BigInt(b[0]) ? -1 : 1,
       );
       if (!entries.length) throw new Error("Empty keyset");
       for (const [amount, key] of entries) {
         const n = BigInt(amount);
-        if (n > BigInt(Number.MAX_SAFE_INTEGER) || (n & (n - 1n)) !== 0n)
+        // Keep the complete keyset for ID verification, including denominations
+        // larger than supported transaction amounts. The amount keys are strings.
+        if ((n & (n - 1n)) !== 0n)
           throw new Error("Unsupported keyset denomination");
         secp256k1.Point.fromHex(key).assertValidity();
       }

@@ -186,8 +186,13 @@ export function createPublisher(
         });
         await wait(Math.max(0, closesAt * 1000 - clock()));
         collecting = false;
+        // Leave one scheduling interval plus an oracle request and mint swap.
+        // This is an acceptance margin, not a guarantee against later refunds.
+        const settlementBudget =
+          config.workerIntervalMs + 2 * config.networkTimeoutMs;
+        const settleBefore = clock() + settlementBudget;
         const winner = candidates
-          .filter((bid) => bid.refundAt > Math.floor(clock() / 1000))
+          .filter((bid) => bid.refundAt * 1000 > settleBefore)
           .sort((a, b) => b.net - a.net)[0];
         if (!winner) {
           store.finish(event.id);

@@ -59,10 +59,14 @@ export function resolveKeyset(id: string, keysets: Keyset[]) {
 }
 
 export function denominations(amount: number, keyset: Keyset): number[] {
+  requireCondition(
+    Number.isSafeInteger(amount) && amount > 0,
+    "invalid_amount",
+  );
   let remaining = BigInt(amount);
   const result: number[] = [];
-  for (const key of Object.keys(keyset.keys).sort(
-    (a, b) => Number(b) - Number(a),
+  for (const key of Object.keys(keyset.keys).sort((a, b) =>
+    BigInt(a) > BigInt(b) ? -1 : 1,
   )) {
     const value = BigInt(key);
     while (remaining >= value) {

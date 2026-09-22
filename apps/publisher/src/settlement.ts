@@ -108,7 +108,11 @@ export function createSettlementWorker(
   http: HttpClient = fetch,
   clock = Date.now,
 ) {
-  let running: Promise<void> | undefined;
+  // Reserve independent capacity for new payments and ambiguous swap recovery.
+  // A slow mint's restore calls must not prevent fresh oracle authorizations.
+  const concurrency = 5;
+  const active = new Map<string, { recovery: boolean; task: Promise<void> }>();
+  let stopping = false;
   let timer: ReturnType<typeof setInterval> | undefined;
   const post = (
     url: string,
@@ -292,31 +296,51 @@ export function createSettlementWorker(
     store.settle(auction.bidRequestId, recoverProofs(plan.outputs, promises));
   }
 
-  async function execute() {
-    for (const auction of store.pending(clock())) {
-      try {
-        await process(auction);
-      } catch (error) {
-        const code =
-          error instanceof PublisherError ? error.code : "payment_retry_needed";
-        const delay = Math.min(
-          60000,
-          config.workerIntervalMs * 2 ** Math.min(auction.attempts, 6),
-        );
-        store.update(auction.bidRequestId, {
-          lastError: code,
-          nextAttemptAt: clock() + delay,
-        });
-      }
+  async function attempt(auction: Auction) {
+    try {
+      await process(auction);
+    } catch (error) {
+      const code =
+        error instanceof PublisherError ? error.code : "payment_retry_needed";
+      const delay = Math.min(
+        60000,
+        config.workerIntervalMs * 2 ** Math.min(auction.attempts, 6),
+      );
+      store.update(auction.bidRequestId, {
+        lastError: code,
+        nextAttemptAt: clock() + delay,
+      });
     }
   }
   return {
-    runOnce(): Promise<void> {
-      return (running ??= execute().finally(() => {
-        running = undefined;
-      }));
+    async runOnce(): Promise<void> {
+      if (stopping) return;
+      for (const recovery of [false, true]) {
+        const available =
+          concurrency -
+          Array.from(active.values()).filter((job) => job.recovery === recovery)
+            .length;
+        if (!available) continue;
+        const due = store.pending(clock(), {
+          phases: recovery ? ["submitted"] : ["pending", "authorized"],
+          exclude: Array.from(active.keys()),
+          limit: available,
+        });
+        for (const auction of due) {
+          // Reserve the bid before starting I/O; overlapping ticks must not
+          // authorize or submit the same payment twice as its phase changes.
+          const task = Promise.resolve()
+            .then(() => attempt(auction))
+            .finally(() => {
+              active.delete(auction.bidRequestId);
+            });
+          active.set(auction.bidRequestId, { recovery, task });
+        }
+      }
+      await Promise.all(Array.from(active.values(), (job) => job.task));
     },
     start() {
+      stopping = false;
       if (!timer)
         timer = setInterval(() => {
           void this.runOnce().catch(() =>
@@ -327,9 +351,10 @@ export function createSettlementWorker(
         }, config.workerIntervalMs);
     },
     async stop() {
+      stopping = true;
       if (timer) clearInterval(timer);
       timer = undefined;
-      await running;
+      await Promise.allSettled(Array.from(active.values(), (job) => job.task));
     },
   };
 }

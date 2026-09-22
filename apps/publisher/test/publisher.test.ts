@@ -22,6 +22,7 @@ import {
   swapDigest,
   verifySignature,
   hashHex,
+  signDigest,
 } from "../src/crypto";
 import { decodePayment } from "../src/payment";
 import type { Bid, SignedEvent } from "../src/schemas";
@@ -34,9 +35,13 @@ afterEach(() => {
   for (const close of cleanup.splice(0).reverse()) close();
 });
 
-function harness(offers?: (request: SignedEvent) => Bid[], path = ":memory:") {
+function harness(
+  offers?: (request: SignedEvent) => Bid[],
+  path = ":memory:",
+  overrides: Record<string, unknown> = {},
+) {
   let now = 1800000000000;
-  const cfg = config();
+  const cfg = config(overrides);
   let event!: SignedEvent;
   const store = openStore(path);
   let closed = false;
@@ -80,6 +85,42 @@ function harness(offers?: (request: SignedEvent) => Bid[], path = ":memory:") {
 }
 
 describe("publisher auction", () => {
+  test("selection reserves worker and network time before the refund deadline", async () => {
+    for (const overrides of [
+      {},
+      { workerIntervalMs: 2500, networkTimeoutMs: 7500 },
+    ]) {
+      const cfg = config(overrides);
+      const budget = cfg.workerIntervalMs + 2 * cfg.networkTimeoutMs;
+      const h = harness(
+        (event) => {
+          const closes = JSON.parse(event.content).closes_at;
+          return [
+            fundedBid(event, { amount: 16, refundAt: closes + 1 }),
+            fundedBid(event, {
+              amount: 32,
+              refundAt: closes + Math.floor(budget / 1000),
+            }),
+            fundedBid(event, {
+              amount: 8,
+              refundAt: closes + Math.floor(budget / 1000) + 1,
+            }),
+          ];
+        },
+        ":memory:",
+        overrides,
+      );
+      const result = await (await h.app(loadRequest())).json();
+      expect(result.status).toBe("filled");
+      expect(h.store.get(result.bid_request_id)?.selected?.bid.amount_sat).toBe(
+        8,
+      );
+    }
+    const h = harness((event) => [
+      fundedBid(event, { refundAt: JSON.parse(event.content).closes_at + 1 }),
+    ]);
+    expect((await (await h.app(loadRequest())).json()).status).toBe("no_fill");
+  });
   test("selects highest positive net bid, preserves HTML and fixes selection", async () => {
     const h = harness((request) => [
       fundedBid(request, { amount: 4 }),
@@ -427,4 +468,108 @@ test("invalid oracle signatures never reach mint; unresolved spends survive refu
   expect(h.store.get(id)?.phase).toBe("submitted");
   expect(h.store.get(id)?.lastError).toBe("unresolved_after_refund_deadline");
   expect(h.store.balance()).toEqual([]);
+});
+
+test("slow recovery cannot block new payments or duplicate in-flight work", async () => {
+  const h = harness((event) => [fundedBid(event)]);
+  const first = await (await h.app(loadRequest())).json();
+  const original = h.store.get(first.bid_request_id)!;
+  const recoveryIds = [original.bidRequestId];
+  h.store.update(original.bidRequestId, {
+    phase: "submitted",
+    oracleSignature: "11".repeat(64),
+  });
+  for (let i = 0; i < 70; i++) {
+    const id = hashHex(`recovery-${i}`);
+    recoveryIds.push(id);
+    h.store.create({
+      ...original,
+      bidRequestId: id,
+      creativeToken: hashHex(`creative-${i}`),
+      phase: "submitted",
+      oracleSignature: "11".repeat(64),
+    });
+  }
+  const release = Promise.withResolvers<void>();
+  const completeSwap = Promise.withResolvers<void>();
+  let restores = 0,
+    authorizations = 0,
+    swaps = 0;
+  const worker = createSettlementWorker(
+    h.cfg,
+    h.store,
+    async (url, init) => {
+      const body = JSON.parse(String(init?.body));
+      if (url.endsWith("/v1/restore")) {
+        restores++;
+        await release.promise;
+        throw new Error("mint restore timed out");
+      }
+      if (url === h.cfg.oracle.authorizationUrl) {
+        authorizations++;
+        const plan = h.store.get(body.request.id)!.plan!;
+        return Response.json({
+          signature: signDigest(
+            swapDigest(plan.inputs, plan.outputs),
+            oracleKey,
+          ),
+        });
+      }
+      swaps++;
+      await completeSwap.promise;
+      return Response.json({
+        signatures: body.outputs.map((o: { B_: string; amount: number }) =>
+          mintPromise(o.B_, o.amount),
+        ),
+      });
+    },
+    h.clock,
+  );
+  const runs: Promise<void>[] = [worker.runOnce()];
+  try {
+    await Bun.sleep(0);
+    expect(restores).toBeGreaterThan(0);
+    const fresh = await (await h.app(loadRequest())).json();
+    runs.push(worker.runOnce(), worker.runOnce());
+    await Bun.sleep(0);
+    expect(h.store.get(fresh.bid_request_id)?.phase).toBe("submitted");
+    runs.push(worker.runOnce());
+    await Bun.sleep(0);
+    expect(restores).toBe(5);
+    expect(swaps).toBe(1);
+    completeSwap.resolve();
+    await Bun.sleep(0);
+    expect(h.store.get(fresh.bid_request_id)?.phase).toBe("settled");
+    expect(authorizations).toBe(1);
+    expect(swaps).toBe(1);
+    expect(restores).toBe(5);
+    // Stopping drains requests already in flight without admitting more work.
+    let drained = false;
+    const stopped = worker.stop().then(() => {
+      drained = true;
+    });
+    runs.push(worker.runOnce());
+    await Bun.sleep(0);
+    expect(drained).toBe(false);
+    release.resolve();
+    await Promise.all([...runs, stopped]);
+    expect(drained).toBe(true);
+    expect(restores).toBe(5);
+    expect(h.store.balance()).toEqual([
+      { mint: "https://mint.example", amount: 7 },
+    ]);
+    // Even once retries are due, untouched work must precede failed attempts.
+    h.advance(300000);
+    const due = h.store.pending(h.clock());
+    expect(due.length).toBe(50);
+    expect(due.every((a) => a.lastError === null)).toBe(true);
+    expect(recoveryIds.filter((id) => h.store.get(id)!.lastError).length).toBe(
+      5,
+    );
+  } finally {
+    release.resolve();
+    completeSwap.resolve();
+    await Promise.allSettled(runs);
+    await worker.stop();
+  }
 });

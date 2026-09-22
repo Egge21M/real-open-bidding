@@ -2,7 +2,7 @@ import { Database } from "bun:sqlite";
 import { chmodSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { and, eq, inArray, lte, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, lte, notInArray, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import {
@@ -140,18 +140,36 @@ export function openStore(path: string) {
           )
           .get();
       },
-      pending(now: number) {
+      pending(
+        now: number,
+        options: {
+          phases?: Auction["phase"][];
+          exclude?: string[];
+          limit?: number;
+        } = {},
+      ) {
         return db
           .select()
           .from(auctions)
           .where(
             and(
               eq(auctions.state, "selected"),
-              inArray(auctions.phase, ["pending", "authorized", "submitted"]),
+              inArray(
+                auctions.phase,
+                options.phases ?? ["pending", "authorized", "submitted"],
+              ),
               lte(auctions.nextAttemptAt, now),
+              options.exclude?.length
+                ? notInArray(auctions.bidRequestId, options.exclude)
+                : undefined,
             ),
           )
-          .limit(50)
+          .orderBy(
+            asc(auctions.nextAttemptAt),
+            asc(auctions.closesAt),
+            asc(auctions.bidRequestId),
+          )
+          .limit(options.limit ?? 50)
           .all();
       },
       update(

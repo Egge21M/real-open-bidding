@@ -17,7 +17,20 @@ const metadata = z
   .object({
     keysets: z
       .array(
-        keysetSchema.omit({ keys: true }).extend({ unit: z.string() }).strip(),
+        keysetSchema
+          .omit({ keys: true })
+          .extend({
+            unit: z.string(),
+            input_fee_ppk: z.preprocess(
+              (value) => value ?? 0,
+              keysetSchema.shape.input_fee_ppk,
+            ),
+            final_expiry: z.preprocess(
+              (value) => value ?? undefined,
+              keysetSchema.shape.final_expiry,
+            ),
+          })
+          .strip(),
       )
       .max(1024),
   })
