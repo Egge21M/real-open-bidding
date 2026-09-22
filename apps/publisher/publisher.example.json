@@ -1,0 +1,16 @@
+{
+  "publicUrl": "https://publisher.example",
+  "allowedOrigins": ["https://site.example"],
+  "relays": ["wss://relay.example"],
+  "oracle": {
+    "pubkey": "REPLACE_WITH_ORACLE_NOSTR_IDENTITY_HEX",
+    "payment_pubkey": "REPLACE_WITH_ORACLE_COMPRESSED_PAYMENT_KEY_HEX",
+    "pixel_base": "https://oracle.example/pixel",
+    "authorizationUrl": "https://oracle.example/authorize"
+  },
+  "mints": [],
+  "databasePath": "data/publisher.sqlite",
+  "hostname": "127.0.0.1",
+  "port": 3001,
+  "auctionSeconds": 2
+}

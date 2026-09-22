@@ -13,6 +13,8 @@
     "build:homepage": "bun run --filter @rob/protocol-homepage build",
     "lint": "bun run --workspaces lint",
     "typecheck": "bun run --workspaces typecheck",
+    "test:publisher": "bun run --filter @rob/publisher --filter @rob/publisher-sdk test",
+    "test:publisher:browser": "bun run --filter @rob/publisher-sdk build && bun run --filter @rob/publisher test:browser",
     "format": "bun run --workspaces format",
     "preview": "bun run --filter @rob/protocol-homepage preview"
   }

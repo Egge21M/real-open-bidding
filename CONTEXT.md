@@ -4,6 +4,15 @@ Shared terminology for ROB auctions and bids.
 
 ## Language
 
+**Publisher**:
+The party offering website banner opportunities, selecting bids, and collecting the proceeds of settled bid payments.
+
+**Inventory**:
+The website banner opportunities a publisher makes available for bidding.
+
+**Placement**:
+A reusable location for banners on a publisher's website, such as a sidebar. Each new ad load for a placement offers a separate impression through its own bid request.
+
 **Bid request**:
 A publisher's announcement inviting funded offers for one offered website banner opportunity and declaring the terms under which it accepts them.
 
@@ -22,6 +31,9 @@ A website's declaration that a publisher's Nostr identity is permitted to offer 
 **Bid request ID (`bid_request_id`)**:
 The stable identifier of an auction's exact published bid request, shared by all bids and payment authorizations for that auction.
 _Avoid_: `request_id`, `request_reference`, `requestReference`, auction ID
+
+**Publisher payment key**:
+The publisher's Cashu signing key named by a bid request, required alongside the oracle's payment key to spend a bid through the publisher payment path.
 
 **Bid collection deadline (`closes_at`)**:
 The upper time bound for receiving bids, with bids received at or after it considered late. It does not guarantee that the publisher is still considering bids before that time.

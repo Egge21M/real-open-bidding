@@ -13,3 +13,8 @@ This directory holds ROB's architectural decision records. Follow the [domain do
 | [0007](0007-oracle-local-authorization.md) | Keep payment validity with the publisher |
 | [0008](0008-nip98-oracle-authorization.md) | Authenticate oracle authorization requests with NIP-98 |
 | [0009](0009-fixed-authorized-swap-outputs.md) | Keep authorized swap outputs fixed |
+| [0010](0010-server-side-publisher.md) | Run publisher auctions and settlement on the server |
+| [0011](0011-javascript-in-isolated-iframes.md) | Support JavaScript banners inside isolated iframes |
+| [0012](0012-local-publisher-payment-recovery.md) | Keep publisher payment recovery in local SQLite |
+| [0013](0013-auction-keys-and-local-funding-validation.md) | Accept funding with auction-specific payment keys and local validation |
+| [0014](0014-freeze-selection-before-delivery.md) | Freeze the publisher's selection before exposing the creative |
