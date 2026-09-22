@@ -2,7 +2,18 @@
 # Only the website's build inputs are sent to the builder.
 *
 !FLOW.md
-!OPENRTB.md
+!NOSTR.md
+!CONTEXT.md
+!OPENRTB*.md
+!PREBID*.md
+!ADS-TXT-NOSTR.md
+!docs/
+docs/*
+!docs/adr/
+!docs/adr/**
+!docs/agents/
+docs/agents/*
+!docs/agents/domain.md
 !website/
 website/*
 !website/package.json

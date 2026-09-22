@@ -6,6 +6,8 @@ Scope: a baseline from current official Prebid documentation and public source f
 
 ROB decision following this research, 2026-09-16: **v1 supports HTML banners only**, with complete markup supplied as a string and the oracle pixel inserted before signing. See [FLOW.md](FLOW.md#v1-creative-scope) and [NOSTR.md](NOSTR.md) for the current specification. The other Prebid formats below remain reference material for possible later versions.
 
+Subsequent ROB decisions restrict inventory to websites, allow [multiple accepted fixed sizes](FLOW.md#banner-sizing) for one impression, and require each bid to commit to one advertised size. V1 uses one shared [rendering profile](FLOW.md#v1-creative-scope), whose precise capabilities and isolation rules remain open. Follow-up research covers [banner sizes](PREBID-SIZES.md) and [auction completion](PREBID-AUCTION.md).
+
 ## Banner
 
 Banner bids commonly carry an HTML markup string in `bid.ad`, or a URL in `bid.adUrl`. The OpenRTB banner response converter maps `adm` to `ad`; if only `nurl` is provided, it maps that URL to `adUrl`. When both exist, the converter prepends a tracking pixel for `nurl` to the markup. This is concrete evidence that the rendering payload may differ from the original server response. [Banner response converter](https://github.com/prebid/Prebid.js/blob/master/libraries/ortbConverter/processors/banner.js).

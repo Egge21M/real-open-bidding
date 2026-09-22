@@ -38,6 +38,7 @@ import { Mark, ProtocolArtwork } from "@/components/protocol-artwork"
 import { FlowExplorer } from "@/components/flow-explorer"
 import { participants, trustQuestions } from "@/protocol"
 import flowUrl from "../../FLOW.md?url"
+import nostrUrl from "../../NOSTR.md?url"
 import openRtbUrl from "../../OPENRTB.md?url"
 
 const Specification = lazy(() => import("@/components/specification"))
@@ -413,6 +414,14 @@ function App() {
                   </span>
                   <ArrowDown />
                 </a>
+                <a href={nostrUrl} download="NOSTR.md">
+                  <Radio />
+                  <span>
+                    ROB messages
+                    <small>Nostr transport and proposed payloads</small>
+                  </span>
+                  <ArrowDown />
+                </a>
                 <a
                   href="https://github.com/nostr-protocol/nips/blob/master/01.md"
                   target="_blank"
@@ -442,10 +451,10 @@ function App() {
               <Info />
               <AlertTitle>A design in progress</AlertTitle>
               <AlertDescription>
-                Wire formats, auction rules, proof validation, key binding, and
-                refund scheduling and retries still need to be specified. This
-                site explains the draft protocol; it is not a live bidding
-                service.
+                Final wire encodings, rendering capabilities, payload limits,
+                and settlement and recovery details remain open. This site
+                explains the agreed flow and remaining specification work; it is
+                not a live bidding service.
               </AlertDescription>
             </Alert>
           </section>
@@ -467,7 +476,8 @@ function App() {
           <DialogHeader className="pr-7">
             <DialogTitle>Real Open Bidding — specification</DialogTitle>
             <DialogDescription>
-              The initial protocol flow, sourced directly from FLOW.md.
+              The current protocol flow and remaining specification work,
+              sourced directly from FLOW.md.
             </DialogDescription>
           </DialogHeader>
           <Separator />

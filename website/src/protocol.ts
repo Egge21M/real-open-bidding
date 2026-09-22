@@ -6,9 +6,10 @@ export const steps = [
     actor: "Publisher → Nostr relays",
     title: "An opportunity, out in the open.",
     description:
-      "The publisher broadcasts an HTML banner opportunity, accepted Cashu mints, payment key, and its chosen oracle’s identity, key, and pixel base URL. V1 supports HTML banners only.",
+      "The publisher broadcasts one website HTML banner opportunity with its domain, accepted fixed sizes, Cashu mints, payment key, and its chosen oracle’s identity, key, and pixel base URL.",
     state: "Awaiting bids",
-    detail: "One published request. Any listening bidder can evaluate it.",
+    detail:
+      "Each request sets a bid collection deadline. Any listening bidder can evaluate it.",
     from: 0,
     to: 1,
   },
@@ -17,9 +18,10 @@ export const steps = [
     actor: "Nostr relays → Bidders",
     title: "Bidders choose where to participate.",
     description:
-      "Bidders subscribe to requests on Nostr and evaluate the opportunity, publisher, and declared oracle. Listening does not commit them to a bid.",
+      "Bidders evaluate the opportunity and publisher. Before locking funds, they independently verify that the declared oracle identity, payment key, and pixel endpoint belong to an oracle they trust.",
     state: "Awaiting bids",
-    detail: "Relays distribute requests. They do not choose the winner.",
+    detail:
+      "Bidders may also check the website’s optional ads.txt declaration of authorized publisher Nostr keys.",
     from: 1,
     to: 2,
   },
@@ -28,7 +30,7 @@ export const steps = [
     actor: "Bidder → Publisher",
     title: "Every offer arrives with its payment.",
     description:
-      "The bidder chooses an accepted mint and a refund deadline, then prepares locked ecash with a fresh refund key. It includes the complete HTML banner with its pixel, then uses that key to commit to the creative, exact token, bidder identity, and bid context.",
+      "The bidder chooses an accepted mint, one advertised banner size, and a refund deadline, then prepares locked ecash with a fresh refund key. That key signs a commitment to the complete HTML with its pixel, exact token, bidder identity, and bid context including the chosen dimensions.",
     state: "Payment locked",
     detail:
       "Gross integer sats per impression. Attached proofs from the selected mint must total exactly the bid amount.",
@@ -40,9 +42,10 @@ export const steps = [
     actor: "Publisher",
     title: "The publisher runs the auction.",
     description:
-      "The publisher checks the mint, sat keysets, proof total, locks, and settlement window before selecting a winner. ROB uses first-price pricing: the winner pays its full bid amount before redemption fees. Selection and tie-breaking rules remain to be specified.",
+      "The publisher checks the mint, sat keysets, proof total, locks, and settlement window before selecting a winner using its own ranking and tie-breaking policy. ROB uses first-price pricing: the winner pays its full bid amount before redemption fees.",
     state: "Payment locked",
-    detail: "Winning the auction does not unlock the payment.",
+    detail:
+      "The deadline is an upper bound: selection may happen earlier. ROB sends no timeout or early-closure notices.",
     from: 0,
     to: 0,
   },
@@ -63,9 +66,10 @@ export const steps = [
     actor: "Publisher ↔ Oracle",
     title: "The oracle checks before it signs.",
     description:
-      "The oracle verifies the commitment using the refund key embedded in every payment proof. It checks the creative, signed bid context, pixel URL, and callback, and requires the proposed spend to use exactly those proofs.",
+      "The oracle verifies the refund-key commitment, creative, signed dimensions and context, pixel URL, and callback. Before signing, it durably binds the opportunity to this commitment and its original payment proofs.",
     state: "1 of 2 signatures",
-    detail: "No matching callback or failed checks means no oracle signature.",
+    detail:
+      "At most one bid may be authorized per opportunity. Exact retries reuse that authorization; another bid cannot replace it.",
     from: 0,
     to: 4,
   },
@@ -96,7 +100,7 @@ export const participants = [
     name: "Bidder",
     icon: Radio,
     subtitle: "Discover openly. Commit upfront.",
-    copy: "Discover opportunities, choose your refund deadline, and attach locked ecash. Use a fresh refund key to sign the creative/payment commitment, keeping it separate from your Nostr identity key. Retain that key and your proofs to reclaim unspent funds after expiry.",
+    copy: "Discover opportunities and independently verify the declared oracle before funding. Choose your refund deadline and attach locked ecash. Use a fresh refund key to sign the creative/payment commitment. Retain that key and your proofs to reclaim unspent funds after expiry.",
     responsibility: "Commits the creative and payment",
     boundary:
       "ROB prescribes no lock duration. The publisher decides whether your settlement window is sufficient.",
@@ -105,8 +109,8 @@ export const participants = [
     name: "Oracle",
     icon: Eye,
     subtitle: "Check the commitment. Co-sign the spend.",
-    copy: "Record pixel callbacks and verify the commitment against the refund key in the payment proofs. Check the creative, ecash, bid context, and pixel URL before authorizing the spend.",
-    responsibility: "Authorizes the proposed spend",
+    copy: "Record pixel callbacks and verify the commitment against the refund key in the payment proofs. Check the creative, chosen size, ecash, bid context, and pixel URL. Durably bind the opportunity to one commitment and its original proofs before releasing a signature.",
+    responsibility: "Authorizes at most one bid per opportunity",
     boundary:
       "A pixel callback does not establish what was actually displayed.",
   },
@@ -137,7 +141,22 @@ export const trustQuestions = [
   [
     "commitment",
     "What protects the original creative?",
-    "The bidder’s fresh refund key signs one commitment covering the original creative hash, exact payment token, bidder identity, and bid context. The oracle verifies it using the refund key embedded in the proofs. This authenticates the refund-key holder’s approval, but does not establish what was displayed.",
+    "The bidder’s fresh refund key signs one commitment covering the exact HTML hash, payment token, bidder identity, and bid context including the chosen CSS-pixel dimensions. The oracle verifies it using the refund key embedded in the proofs. This authenticates the refund-key holder’s approval, but does not establish what was displayed.",
+  ],
+  [
+    "seller",
+    "Must bidders verify the website’s seller authorization?",
+    "Bidders may require the website’s ads.txt declaration to authorize the Nostr key that signed the request. Publication and enforcement are optional, and the extension’s exact syntax and lookup rules remain draft. Oracle verification is a separate mandatory step: bidders must independently verify the trusted oracle’s identity, payment key, and pixel endpoint before funding.",
+  ],
+  [
+    "context",
+    "What context is published with an opportunity?",
+    "Every request includes OpenRTB site context with a nonempty site.domain. Device context is optional; the user object is outside v1. Public requests exclude viewer IPs, precise coordinates, and persistent device identifiers, including data hidden in extensions. Other supplied metadata is publisher-declared and is not necessarily anonymous.",
+  ],
+  [
+    "offers",
+    "Can a bidder submit another offer?",
+    "Yes. Each additional bid is an independent immutable offer with a fresh nonce, refund key, and separate funding. It does not replace an earlier bid. The oracle can authorize at most one commitment per opportunity and cannot switch to another bid after signing, even if settlement fails.",
   ],
   [
     "dependencies",
@@ -147,6 +166,6 @@ export const trustQuestions = [
   [
     "recovery",
     "What happens to unsuccessful bids?",
-    "After the bidder-chosen locktime expires according to the mint’s clock, the bidder can actively reclaim unspent proofs using its refund key. No publisher or oracle signature is needed. Refunds are not automatic: the publisher’s path remains valid, and late settlement can race with a refund. Mint outages can delay recovery.",
+    "ROB sends no bidder receipts, outcome notices, or rejection messages. After the bidder-chosen locktime expires according to the mint’s clock, the bidder can actively reclaim unspent proofs using its refund key. The auction deadline or early selection does not unlock a refund. Refunds need no publisher or oracle signature and are not automatic: the publisher’s path remains valid, so late settlement can race with recovery. Mint outages can delay recovery.",
   ],
 ]

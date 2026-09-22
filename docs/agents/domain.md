@@ -12,7 +12,8 @@ Read `CONTEXT.md` before exploring or changing ROB specifications or code. Read 
 - `docs/adr/`: accepted architectural decisions, their alternatives, and consequences. Use numbered files such as `0001-single-bid-authorization.md` when a decision warrants a record.
 - `FLOW.md`: protocol flow, payment authorization, commitments, settlement, and refunds.
 - `NOSTR.md`: Nostr transport, event fields, and payloads.
-- `OPENRTB.md` and `PREBID.md`: reference material; only decisions explicitly adopted in the ROB specifications are ROB requirements.
+- `ADS-TXT-NOSTR.md`: seller-authorization extension draft. Follow the accepted optional-publication/enforcement policy in `FLOW.md`; entry syntax and retrieval details remain proposals.
+- `OPENRTB.md`, `OPENRTB-ROB-PROFILE.md`, and `PREBID*.md`: external reference material and research with links to adopted ROB decisions. Only behavior explicitly adopted in `FLOW.md` or `NOSTR.md` is a ROB requirement; preserve the external standards' field meanings.
 
 ## Maintain consistent language
 

@@ -4,7 +4,9 @@ WORKDIR /app/website
 COPY website/package.json website/package-lock.json ./
 RUN npm ci
 
-COPY FLOW.md OPENRTB.md /app/
+COPY FLOW.md NOSTR.md CONTEXT.md OPENRTB*.md PREBID*.md ADS-TXT-NOSTR.md /app/
+COPY docs/adr/ /app/docs/adr/
+COPY docs/agents/domain.md /app/docs/agents/domain.md
 COPY website/ ./
 RUN npm run build
 

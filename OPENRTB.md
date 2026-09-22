@@ -1202,25 +1202,22 @@ Sources: [pinned schema][ortb], [release history][releases], [Native][native], a
 
 ## 11. Decisions for Real Open Bidding
 
-The following is the original **design checklist**, not a list of requirements adopted by this repository. Some questions have since been settled; [FLOW.md](FLOW.md) and [NOSTR.md](NOSTR.md) record the current ROB decisions and remaining work, including HTML banners as the sole v1 creative format and the refund-key-signed creative/payment commitment. This OpenRTB baseline does not define ROB wire keys or override those decisions.
+The OpenRTB catalogue above is reference material, not ROB's wire schema. [FLOW.md](FLOW.md) and [NOSTR.md](NOSTR.md) own the accepted ROB requirements. The current adoption map below replaces the original design checklist; it does not import other OpenRTB fields, media formats, notices, or auction behavior into ROB.
 
-| Decision | What the new specification needs to settle |
+| Area | Current ROB decision and specification |
 | --- | --- |
-| Purpose and scope | Which problems differ from OpenRTB, and which participants and media are in the first version? |
-| Compatibility | A strict OpenRTB profile, an adapter-compatible protocol, or a new wire format? Which dated baseline and companion versions are supported? |
-| Minimum useful request | Which context, supply-authorization, media, and policy fields are mandatory beyond core OpenRTB's technical minimum? |
-| Identity and privacy | Is contextual operation the default? Which optional identifiers and signals are supported, with what minimization and retention rules? |
-| Authentication and trust | How do participants authenticate, verify inventory rights, and distinguish declarations from independently verifiable evidence? |
-| Auction rules | Which price models, floors, priority rules, currencies, rounding, discounts, and tie-breakers are defined? |
-| Deadlines and failures | How are deadlines propagated, late responses treated, retries bounded, and duplicate auctions/notices recognized? |
-| Creative delivery | Inline, pre-registered, or fetched-on-win assets? Which review process, markup formats, and renderer capabilities are supported? |
-| Event model | What identifies a win, render, billable impression, loss, cancellation, and correction? How are multi-stage auction outcomes represented? |
-| Accounting and settlement | Which event creates an obligation, how is its quantity proven, and how do corrections, reconciliation, and payment work? |
-| Deals and pods | Which guarantee semantics, duration-packing rules, competitive separation, and deal allocation rules are in scope? |
-| Extensibility | Who owns extension namespaces, how are schemas published, and how are breaking changes introduced? |
-| Conformance | Which machine-readable schemas, fixtures, failure cases, and interoperability checks define a conforming implementation? |
+| Inventory and creative delivery | [Website HTML banners only](FLOW.md#v1-creative-scope), with exactly one offered impression per request. Bids include the complete original HTML string with the pixel inserted before signing. One shared rendering profile is agreed; its exact capabilities and isolation rules remain open. |
+| Advertising context | Reuse OpenRTB 2.6-202606 `site` and `device` structures and meanings. Require `site` with nonempty `site.domain`; `device` is optional and `user` is outside v1. [ROB context rules](FLOW.md#advertising-context) exclude viewer IPs, precise coordinates, and persistent device identifiers, including through extensions. The [profile research](OPENRTB-ROB-PROFILE.md) records the adoption boundary. |
+| Seller and oracle trust | An [ads.txt extension](ADS-TXT-NOSTR.md) lets websites authorize publisher Nostr signing keys. Publication and bidder enforcement are optional; exact syntax and retrieval rules remain draft. Separately, bidders [must verify a trusted oracle identity binding before funding](FLOW.md#required-oracle-verification). |
+| Banner dimensions | Requests offer a nonempty list of [fixed CSS-pixel size alternatives](FLOW.md#banner-sizing) for their single impression. Each bid explicitly commits to one advertised pair; publisher and oracle reject missing, invalid, or unlisted sizes. |
+| Identity and bids | `bid_request_id` is the original signed Nostr request event's ID. Multiple bids are independent immutable offers with fresh nonces, refund keys, and separate funding; retransmission preserves the offer. See [request identity](NOSTR.md#2-auction-request) and [bid submission](FLOW.md#3-bidder-sends-a-prepaid-response). |
+| Pricing and timing | [First-price pricing](FLOW.md#4-publisher-runs-the-auction) in positive integer gross sats per impression. Ranking and ties are publisher-defined. Required `closes_at` is an upper bound on timely receipt; publishers may select and proceed earlier. |
+| Transport and notices | [Two ROB message types](NOSTR.md#1-decisions-so-far): public requests and gift-wrapped bids. There are [no ROB receipts, outcome notices, or rejection messages](NOSTR.md#4-delivery-without-status-messages), including no timeout or early-closure announcement. |
+| Payment and recovery | The [refund-key-signed commitment](FLOW.md#creative-and-verification) binds the HTML, exact payment token, bidder identity, and context including dimensions. The oracle may [authorize at most one bid per opportunity](FLOW.md#one-authorized-bid-per-impression). The pixel is a delivery signal; settlement still requires mint completion, and refunds require active recovery after eligibility. |
+| Payload budgets | [Common maximum request/bid sizes](NOSTR.md#payload-size-limits), with optional lower publisher-advertised bid limits. Numeric budgets and byte-counting boundaries remain open. |
+| Remaining interoperability work | [FLOW's open details](FLOW.md#details-still-to-specify) and [NOSTR's next decisions](NOSTR.md#5-next-decisions) cover final schemas, context serialization, key bindings, payment operations, recovery, and conformance fixtures. |
 
-A future normative document can resolve these items one by one and cite this reference for inherited behavior.
+Fields for deals, pods, other media, and additional OpenRTB identity or event features remain external reference material unless explicitly adopted in the ROB specifications.
 
 ## 12. Sources and attribution
 

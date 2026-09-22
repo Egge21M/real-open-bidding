@@ -16,35 +16,49 @@ The transport choices recorded here develop the open Nostr questions in FLOW.md.
 | Event lifetime | Publish auction requests as ephemeral `28300` events and bids inside ephemeral `21059` gift wraps. |
 | Payload encoding | ROB payloads use JSON in `content`. A bid's JSON is the inner `28301` rumor's content; the seal and gift wrap contain ciphertext. |
 | Discovery fields | Keep advertising and payment fields in JSON for now; additional discovery tags are deferred. Routing/reference tags remain a separate proposal. |
-| Auction request | Public broadcast from publisher to listening bidders. |
+| Auction request | Public broadcast from publisher to listening bidders, offering exactly one impression in v1 and retaining `impression_id`. |
+| Advertising context | Required OpenRTB `site` with nonempty `site.domain`; optional `device`. Preserve standard field meanings. Public requests exclude viewer IP addresses, precise coordinates, and persistent device identifiers under FLOW.md's context rules. `user` is outside v1; remaining extension/deprecated-field handling is open. |
+| Seller authorization | ROB specifies an optional ads.txt declaration authorizing publisher Nostr signing keys for website inventory. Bidders may enforce it against the request envelope's `pubkey` and `site.domain`; a missing or unverified listing is not a protocol validity or funding failure. Exact extension syntax and retrieval/cache rules remain draft. |
 | Bid request ID | `bid_request_id` is the signed `28300` event's `id`, stable across retransmission and used by bids, pixel callbacks, commitments, and payment authorizations. |
 | Payment exclusivity | At most one authorized bid commitment per `(bid_request_id, impression_id)`. Retries remain bound to that commitment and its original payment proofs; no switch to another bid after oracle signing. |
-| V1 creative scope | HTML banners only, supplied as complete HTML markup strings with the oracle pixel inserted before signing. `html` is the sole v1 creative type; other media formats and URL-only creative responses are excluded. |
+| V1 creative scope | Website HTML banners only, supplied as complete HTML markup strings with the oracle pixel inserted before signing. `html` is the sole v1 creative type; in-app inventory, other media formats, and URL-only creative responses are excluded. |
+| Rendering profile | One shared v1 profile; no per-request HTML/CSS/JavaScript profile selection. Supported features and isolation rules remain to be agreed; renderer implementation is publisher-local. |
+| Payload size limits | Common maximum request/bid sizes, with publishers able to advertise a smaller bid limit. Numeric budgets, byte-counting boundaries, and lower-limit field names remain open. |
+| Banner sizing | The request offers a nonempty list of exact width/height alternatives in positive integer CSS pixels. Each bid explicitly declares one advertised pair, covered by its commitment. Unlisted sizes are ineligible; fluid/aspect-ratio sizing is excluded. Final field names/nesting remain open. |
 | Auction pricing | Always first-price: the winner pays its full bid amount before redemption fees. No `auction_type` field. |
-| Auction deadline | Required `closes_at`: integer Unix timestamp in seconds. |
+| Bid selection | Ranking and tie-breaking among eligible bids are publisher-defined. First-price fixes the selected bidder's payment amount. |
+| Multiple bids | A bidder may submit multiple independent, immutable bids for one opportunity, each with a fresh `bid_nonce`, refund key, and separate funding. Later offers do not replace earlier offers. |
+| Bid collection deadline | Required `closes_at`: integer Unix timestamp in seconds and an upper bound on timely receipt. The publisher may select early; collection and stopping behavior are implementation details. |
 | Accepted mints | Required `mints`: a nonempty array of Cashu mint URLs accepted by the publisher. Each bid uses exactly one listed mint. |
 | Bid payment | Required `payment`: a bare Cashu V4 token string beginning with `cashuB`, containing locked proofs from one accepted mint and no spending witnesses. |
 | Payment hash | Lowercase hex SHA-256 of the UTF-8 bytes of the exact original `payment` string. Preserve the string through oracle verification. |
 | Creative hash | Lowercase hex SHA-256 of the exact UTF-8 HTML string after JSON decoding, including the inserted pixel. No normalization; reject invalid Unicode. Preserve the string through verification and rendering. |
 | Commitment signer | The fresh refund key embedded in every proof signs one BIP-340 Schnorr commitment. All proofs have the same single refund key, separate from the bidder's Nostr identity. |
-| Commitment contents | Exact-token payment hash, 32-byte creative hash, bidder Nostr public key, and a hash of the bid context, using the `ROB/commitment/v1` tagged digest in FLOW.md. Context encoding remains open. |
+| Commitment contents | Exact-token payment hash, 32-byte creative hash, bidder Nostr public key, and a hash of the bid context including chosen creative width and height, using the `ROB/commitment/v1` tagged digest in FLOW.md. Context encoding remains open. |
 | Bidder identity | Signed data in the commitment; must match the seal signer and rumor public key at the publisher. The commitment verification key is extracted from the proofs' refund conditions. No second standalone identity-key commitment signature or memo authorization is required. |
 | Bid submission | Directed to the publisher using NIP-59 ephemeral gift wrapping: inner `28301` rumor, signed `13` seal, outer `21059` wrap. |
-| Bid status | Omitted for now, including receipt acknowledgements and win/loss notices. |
+| Bid status | V1 has no ROB bidder receipts, outcome notices, or rejection messages, including no timeout reason or early-closure announcement. |
 | Encryption scheme | NIP-44 as used by NIP-59. The exact revision and library compatibility profile remain to be pinned. |
 | Publisher–oracle communication | HTTPS is recommended; final transport and API details remain open. No oracle event kinds are proposed here. |
 | Oracle authorization endpoint | Configured or discovered separately by the publisher; omitted from the auction request. |
+| Oracle verification | Before funding, bidders must independently authenticate the declared oracle identity, payment key, and pixel base URL as belonging to an oracle they trust. The publisher's declaration alone is insufficient. Bidders choose their verification mechanism; trusted local configuration can satisfy the requirement. V1 requires no shared oracle attestation/discovery protocol. |
 | Numeric kinds | `28300` for public auction requests; `28301` for inner bid rumors. Agreed experimental ROB assignments. The transport reuses NIP-59 kinds `13` and `21059`. |
 
 NIP-01 defines kinds `20000 <= kind < 30000` as ephemeral: relays are not expected to store them. This is a delivery convention, not a confidentiality or deletion guarantee. [NIP-01](https://github.com/nostr-protocol/nips/blob/master/01.md).
 
 Neither selected kind was listed in the [Nostr kind registry](https://github.com/nostr-protocol/registry-of-kinds/blob/master/schema.yaml) when checked on 2026-09-15. This check does not guarantee absence of use elsewhere. Publish the ROB definitions to the registry once the schemas are settled.
 
+### Payload size limits
+
+**Agreed 2026-09-22:** v1 has common maximum sizes for bid requests and bids. A publisher may advertise a smaller accepted bid size in the signed request; its advertised limit cannot exceed the protocol maximum. Bidders must respect both the common maximum and any lower advertised maximum.
+
+The numeric limits and exact measurement boundaries remain open. They must be defined with the complete serialized payment token and NIP-59/NIP-44 overhead in mind; a limit on creative HTML alone would not bound the full bid. The wire schema must specify which decoded payloads and/or serialized event layers each limit measures. No numeric budget or field name is chosen by this decision. ROB's agreed lack of bidder rejection/status messages also applies to size-related rejection.
+
 ## 2. Auction request
 
 Kind: `28300` (`ROB_AUCTION_REQUEST`).
 
-The publisher signs and broadcasts an HTML banner opportunity. Bidders subscribe to suitable relays and evaluate the publisher, opportunity, accepted mints, and oracle before funding a bid.
+The publisher signs and broadcasts a website HTML banner opportunity. Bidders subscribe to suitable relays and evaluate the publisher, opportunity, accepted mints, and oracle before funding a bid.
 
 ### Information to represent
 
@@ -52,13 +66,15 @@ These are semantic requirements and proposed additions; only explicitly agreed f
 
 | Information | Status |
 | --- | --- |
-| HTML banner opportunity and impression identifier | Required by the flow; dimensions, compatibility fields, and other minimum advertising fields remain open. HTML banners are the only v1 media format. |
+| HTML banner opportunity and impression identifier | Exactly one offered website impression per v1 bid request, retaining `impression_id`, with a nonempty list of accepted fixed width/height pairs in CSS pixels. Final size field names/nesting, additional compatibility fields, and other minimum advertising fields remain open. HTML banners are the only v1 media format; in-app inventory is excluded. |
+| Site and device context | Required `site` with nonempty `site.domain`; optional `device`, using OpenRTB 2.6-202606 definitions subject to ROB's public-data exclusions. `user` is outside v1. |
 | Bid request ID | `bid_request_id` is the signed request event's `id`, obtained from the envelope rather than embedded in its own content. |
 | Publisher payment public key | Required by the flow; binding to the Nostr signing identity remains open. |
 | Accepted Cashu mint URLs | Required `mints`: a nonempty array of mint URL strings. |
-| Oracle identity, payment public key, and pixel base URL | Required by the flow. |
+| Oracle identity, payment public key, and pixel base URL | Required by the flow; the bidder must independently verify their binding to a trusted oracle before funding. |
 | Protocol version | Proposed. |
-| Auction closing time | Required `closes_at`, expressed as an integer Unix timestamp in seconds. |
+| Bid collection deadline | Required `closes_at`, an upper bound on timely receipt expressed as an integer Unix timestamp in seconds. |
+| Maximum accepted bid size | Optional publisher-advertised limit below the common protocol maximum; numeric budgets, measurement boundary, and field name remain to be defined. |
 | Bid-delivery relay information | Proposed; exact relay-selection rules remain open. |
 
 The request does not impose a Cashu refund deadline. Each bidder chooses its own deadline; the publisher decides whether the remaining settlement time is acceptable.
@@ -69,13 +85,19 @@ The publisher lists its accepted mints in `mints`, including when it accepts onl
 
 The oracle's authorization endpoint is not part of the request. The publisher configures or discovers it separately to obtain a spending signature. Bidders need the declared oracle identity to evaluate participation, its payment key to lock ecash, and its pixel base URL to construct the creative. Publisher–oracle authentication must bind the separately configured service to the declared oracle; its details remain open.
 
-### Pricing and closing time
+**Agreed 2026-09-21:** bidders MUST independently verify the oracle identity binding before locking funds. Authenticating the publisher's Nostr signature establishes who made the declaration, not that the declared key and pixel endpoint belong to a trusted oracle. Without a verified binding, the bidder must not fund or submit the bid. The bidder chooses the verification mechanism, with trusted local configuration sufficient; v1 requires no common oracle attestation/discovery protocol. Changed keys or endpoints must also have a verified binding. See [FLOW.md](FLOW.md#2-bidders-evaluate-the-opportunity) and [ADR-0004](docs/adr/0004-verify-oracle-before-funding.md).
 
-ROB always uses first-price pricing. A winning 10-sat bid pays 10 sats gross; the publisher receives the value remaining after redemption fees. The request carries no `auction_type` field. Eligibility, selection, and tie-breaking rules remain to be specified.
+**Agreed 2026-09-21:** accepted banner sizes are alternatives for the request's single impression. Every bid explicitly declares one pair of positive integer CSS-pixel dimensions from that list, and its commitment covers the chosen width and height. Publisher and oracle reject missing, invalid, or unlisted dimensions. Responsive selection of the advertised list is publisher-local before publication; fluid/aspect-ratio sizing is outside v1. See [FLOW.md: Banner sizing](FLOW.md#banner-sizing). Exact request and bid size field names remain to be agreed.
 
-`closes_at` is an absolute deadline in Unix seconds, using the same time unit as the Nostr envelope's `created_at`. It replaces the previously discussed `closes_at_ms` proposal. For example, `created_at: 1800000000` and `closes_at: 1800000003` describe a closing time three seconds after the stated creation time.
+### Pricing and bid collection deadline
+
+ROB always uses first-price pricing. A winning 10-sat bid pays 10 sats gross; the publisher receives the value remaining after redemption fees. The request carries no `auction_type` field. Ranking and tie-breaking among eligible bids are publisher-defined, including whether to prefer gross amount, proceeds after fees, or creative suitability. Remaining eligibility rules are still to be specified.
+
+`closes_at` is an absolute bid collection deadline in Unix seconds, using the same time unit as the Nostr envelope's `created_at`. It replaces the previously discussed `closes_at_ms` proposal. For example, `created_at: 1800000000` and `closes_at: 1800000003` place the deadline three seconds after the stated creation time; they do not guarantee that the publisher considers bids for the full three seconds.
 
 The publisher evaluates timeliness using its own receipt time: a bid received at or after `closes_at` is late. The bidder's event timestamp does not establish timely receipt. Network transit consumes the available bidding window; seconds precision does not compensate for delay or clock differences. This field sets neither a fixed auction duration nor a Cashu refund deadline.
+
+**Agreed 2026-09-21:** the publisher may select early and proceed through rendering, oracle authorization, and settlement before `closes_at`, subject to the existing payment rules. Collection and stopping policy are implementation details. ROB defines no bidder notification for timeout, rejection, or early closure; a bid received before the deadline may still be unused. See [delivery without status messages](#4-delivery-without-status-messages) and [ADR-0003](docs/adr/0003-publisher-controlled-early-selection.md).
 
 ### Proposed envelope
 
@@ -85,7 +107,13 @@ The publisher evaluates timeliness using its own receipt time: a bid received at
 - `tags`: no ROB discovery tags for now; start with an empty array.
 - Other envelope fields and the event signature follow NIP-01.
 
-Public content needs an explicit field allowlist. Reusing OpenRTB concepts must not automatically expose its optional user or device information through public broadcasts. Bidders initially filter by event kind and, optionally, publisher identity, then inspect the JSON payload. Additional discovery tags can be considered later.
+**Agreed 2026-09-22:** the request uses OpenRTB `site` and `device` for contextual information, preserving their standard field names, types, meanings, and nested definitions. The OpenRTB `user` object is outside v1. See [FLOW.md: Advertising context](FLOW.md#advertising-context) and [ADR-0005](docs/adr/0005-reuse-site-and-device-context.md).
+
+**Agreed 2026-09-22:** `site` and its nonempty `domain` string are required; `device` is optional. Public requests must exclude viewer IP addresses, precise coordinates, and persistent device identifiers, including the fields enumerated in [FLOW.md: Advertising context](FLOW.md#advertising-context). Browser, language, screen, and capability information remain supported. Extensions or renamed fields cannot carry the prohibited device data. Requests containing prohibited data are invalid; removing it from an already signed event does not preserve that request's identity. All included content is public. [Reusing OpenRTB objects in ROB](OPENRTB-ROB-PROFILE.md) records the research and remaining profile questions; it does not define a complete wire schema.
+
+**Agreed 2026-09-22:** a website may publish authorized publisher Nostr keys using ROB's ads.txt extension. A bidder may check the signed request envelope's `pubkey` against that declaration for `site.domain` and require a verified match as its own participation policy. ROB requires neither a published listing nor successful seller verification before funding. Failed or missing authorization is not itself a protocol rejection, and no seller-authorization status message is added. See [FLOW.md: Optional seller authorization](FLOW.md#optional-seller-authorization) and [the extension draft](ADS-TXT-NOSTR.md).
+
+Bidders initially filter by event kind and, optionally, publisher identity, then inspect the JSON payload. Additional discovery tags can be considered later.
 
 ## 3. Bid submission
 
@@ -100,12 +128,15 @@ The bidder submits a complete creative and funded offer for an auction. The JSON
 | Bid request and impression references | Required `bid_request_id` equals the original signed `28300` event's `id`; impression ID encoding remains open. |
 | Fresh bid nonce | Required by the pixel convention in FLOW.md. |
 | Complete original HTML banner markup, including the completed pixel URL | Required as a string. `html` is the only v1 creative type. A URL-only response or another media format is invalid. |
+| Bid creative size | Required explicit width and height in positive integer CSS pixels, matching one advertised pair and covered by the commitment's bid context. Required even for a request offering only one size; final field names remain open. |
 | Positive integer gross amount in sats per impression | Required by the flow. |
 | Selected mint and locked ecash totaling the bid amount | Required `payment`: a Cashu V4 token string. The token encodes the selected mint, unit, and proofs. |
 | Refund-key-signed creative/payment commitment | Required: BIP-340 signature covering the payment hash, creative hash, bidder Nostr identity, and bid context under FLOW.md's tagged digest construction. Final schema and context encoding remain open. |
 | Protocol version | Proposed. |
 
 Refund conditions are encoded in the token's locked proofs. The payment field adds no separate mint, unit, proof array, refund deadline, or refund key fields. Generate a fresh refund key per logical bid; every proof must have the same single refund key and `n_sigs_refund` of `1`. Extract the commitment verification key from these proofs.
+
+A bidder may submit multiple independent, immutable bids for the same `(bid_request_id, impression_id)`. Each new offer uses a fresh `bid_nonce`, refund key, and separate funding, without reusing another bid's proofs. A later offer does not replace or withdraw an earlier one. Retransmissions preserve the original offer, token, refund key, nonce, and commitment; v1 defines no amendment or withdrawal message. See [FLOW.md](FLOW.md#3-bidder-sends-a-prepaid-response) and [ADR-0002](docs/adr/0002-independent-immutable-bids.md).
 
 ### Gift-wrapped transport
 
@@ -136,6 +167,8 @@ This is the JSON object serialized into the inner rumor's `content`, before seal
   "amount_sat": 8,
   "creative": {
     "type": "html",
+    "width": 300,
+    "height": 250,
     "content": "<a href=\"https://advertiser.example\"><img src=\"https://advertiser.example/banner.png\" width=\"300\" height=\"250\" alt=\"Example ad\"></a><img src=\"https://oracle.example/pixel/<bid-request-event-id>/1/<fresh-random-bid-nonce>\" width=\"1\" height=\"1\" alt=\"\">"
   },
   "payment": "cashuB<serialized-token>",
@@ -159,7 +192,8 @@ Proposed interpretation and validation:
 - V4 supports optional DLEQ data for mint-signature verification. Whether ROB requires it on every proof remains a validation-profile decision. Included DLEQ data is part of the hashed token string; it is not stripped before hashing. DLEQ verification does not establish that proofs remain unspent, and its `r` value must not be forwarded to the mint in the eventual spend.
 - `commitment.bidder_pubkey` is the bidder's Nostr identity, included as signed data, and must match the authenticated identity from the seal and rumor at the publisher. It is not the commitment verification key. `commitment.sig` is a BIP-340 Schnorr signature verified against the refund key extracted from the proofs. No second standalone commitment signature by the Nostr identity is required. The rumor has no event signature.
 - `commitment.payment_hash` binds the exact original token string and therefore its encoded mint, unit, proofs, and any optional data. The signature covers both `creative_hash` and `payment_hash` together with the bid context. Including a hash in the JSON without signing it would not establish the binding.
-- The commitment digest combines the payment hash, creative hash, bidder Nostr public key, and context hash as four 32-byte values in that order, under the `ROB/commitment/v1` tag. The context identifies the request through `bid_request_id`, plus the impression, bid nonce, and creative type. The publisher/oracle keys and gross amount must match the original request and committed proofs. The signature scheme, digest construction, creative hashing rules, and `bid_request_id` are agreed; context encoding and the remaining wire schema are open. See [FLOW.md: Commitment digest and signature](FLOW.md#commitment-digest-and-signature).
+- The example's `creative.width` and `creative.height` represent the agreed bid creative size; their names and nesting are proposed. The original request must list 300 × 250 as an accepted size for this example to be eligible. Dimensions are signed through the bid context, while `creative_hash` continues to cover only the exact HTML string.
+- The commitment digest combines the payment hash, creative hash, bidder Nostr public key, and context hash as four 32-byte values in that order, under the `ROB/commitment/v1` tag. The context identifies the request through `bid_request_id`, plus the impression, bid nonce, creative type, and chosen creative width and height. The dimensions must match an accepted pair in the original request. The publisher/oracle keys and gross amount must match the original request and committed proofs. The signature scheme, digest construction, creative hashing rules, and `bid_request_id` are agreed; context encoding and the remaining wire schema are open. See [FLOW.md: Commitment digest and signature](FLOW.md#commitment-digest-and-signature).
 
 Cashu V4 defines the CBOR/base64url token format, including its mint, unit, keysets, and proofs. ROB reuses that format rather than defining a JSON payment object. [NUT-00: V4 tokens](https://github.com/cashubtc/nuts/blob/main/00.md#v4-tokens). DLEQ verification and the restriction on sharing its `r` value with the mint are described in [NUT-12](https://github.com/cashubtc/nuts/blob/main/12.md#user-to-user-dleq-in-proof).
 
@@ -226,37 +260,39 @@ The wrapped payload carries one commitment signed with the fresh refund key. [FL
 Before signing a spend, the oracle:
 
 1. Decodes and validates the payment token and all proofs, including their required locking/refund conditions. It extracts the same single refund key from every proof and derives its BIP-340 x-only verification key. A separately claimed verification key cannot override the proofs.
-2. Hashes the original token string, recomputes the creative hash and bid context, and verifies the commitment's Schnorr signature with that refund key. The bidder Nostr public key is one of the signed values. Successful signature verification does not replace proof validation.
+2. Hashes the original token string, recomputes the creative hash and bid context including chosen width and height, and verifies the commitment's Schnorr signature with that refund key. Requires the declared dimensions to match an accepted pair in the original signed request. The bidder Nostr public key is one of the signed values. Successful signature verification does not replace proof validation.
 3. Checks that the proposed transaction spends exactly those proofs at their mint: no substituted, omitted, duplicated, or additional inputs. Compare decoded proof amounts, resolved keyset IDs, original secret strings, and mint signatures `C`; later witnesses are not part of proof identity. Comparing a separate attached token to the commitment is insufficient if the transaction being signed uses different inputs.
 4. Applies the remaining request, amount, payment, pixel URL, and callback checks before signing the exact transaction under `SIG_ALL`.
 5. Enforces [one authorized bid per impression](FLOW.md#one-authorized-bid-per-impression), atomically persisting the binding from `(bid_request_id, impression_id)` to the commitment and its original payment proofs before releasing a signature. An exact retry returns the existing authorization; a different bid for that opportunity is rejected after authorization has been issued.
 
 The commitment supplies transferable evidence of refund-key authorization; gift wrapping does not make it deniable. Its signature is kept outside the original token and spending witnesses. It is separate from the publisher/oracle settlement signatures and any later refund-spend signature.
 
-Required rejection cases for future conformance fixtures include an identity-key signature in place of the refund-key signature; missing, multiple, or inconsistent refund keys; a mismatch between the signed bidder identity and the authenticated Nostr sender at the publisher; and a changed token/memo, creative hash, identity, context, or domain tag with an unchanged commitment signature. Reject malformed UTF-8, unpaired surrogates in the HTML string, and submitted HTML that does not match the claimed creative hash, including whitespace-only changes. Invalid or unexpected transaction inputs must also be rejected even when the commitment itself verifies.
+Required rejection cases for future conformance fixtures include an identity-key signature in place of the refund-key signature; missing, multiple, or inconsistent refund keys; a mismatch between the signed bidder identity and the authenticated Nostr sender at the publisher; and a changed token/memo, creative hash, identity, context, or domain tag with an unchanged commitment signature. Reject missing, invalid, or unlisted creative dimensions, as well as a changed width or height with an unchanged commitment signature even if both sizes are advertised. Reject malformed UTF-8, unpaired surrogates in the HTML string, and submitted HTML that does not match the claimed creative hash, including whitespace-only changes. Invalid or unexpected transaction inputs must also be rejected even when the commitment itself verifies.
+
+Request fixtures must also cover missing `site` or empty/missing `site.domain`, the excluded `user` object, and prohibited public device data, including data moved into extensions or renamed fields. Authorization fixtures must cover concurrent requests for different bids on one opportunity, an exact retry returning the existing authorization, and refusal to authorize another commitment after signing even if settlement fails or refund eligibility begins.
 
 ## 4. Delivery without status messages
 
-The bidder submits an offer without expecting a ROB receipt or outcome event. Relay acceptance does not establish that the publisher received, validated, or selected the bid. NIP-01's `OK` message reports relay acceptance or rejection. [NIP-01](https://github.com/nostr-protocol/nips/blob/master/01.md).
+The bidder submits an offer without expecting a ROB receipt, outcome, or rejection event. In particular, no message tells the bidder that its bid was unused because of timeout or early closure, and no ROB event announces early closure. Relay acceptance does not establish that the publisher received, validated, or selected the bid. NIP-01's `OK` message reports relay acceptance or rejection, not the publisher's auction decision. [NIP-01](https://github.com/nostr-protocol/nips/blob/master/01.md).
 
-If a bid is missed or unused, the bidder can attempt recovery of unspent proofs after its refund deadline, following FLOW.md. Receipt of a status message is not a condition for recovery.
+If a bid is missed or unused, the bidder can attempt recovery of unspent proofs after its refund deadline, following FLOW.md. This includes timeout and early-closure cases. Receipt of a status message is not a condition for recovery, and `closes_at` does not make funds refund-eligible.
 
 Proposed implementation rules to settle alongside the schemas:
 
 - Publishers establish bid subscriptions before announcing opportunities.
 - Participants retain the evidence and payment state they need locally; later relay retrieval is not assumed.
 - The publisher forwards original signed evidence needed by the oracle rather than relying on event-ID lookup.
-- Duplicate deliveries represent one logical bid. Rewrapping the same rumor changes the outer event ID, so deduplication cannot rely solely on gift-wrap IDs. The inner rumor ID and bid nonce are available after unwrapping; exact logical-bid, retransmission, and proof-reuse rules remain to be defined.
+- Duplicate deliveries represent one logical bid and preserve the original offer and funding. Rewrapping the same rumor changes the outer event ID, so deduplication cannot rely solely on gift-wrap IDs. The inner rumor ID and bid nonce are available after unwrapping; exact deduplication keys, nonce-conflict handling, and proof-reuse detection remain to be defined.
 - Auction deadlines are enforced by the publisher even if a relay delivers an old event.
 
 ## 5. Next decisions
 
-1. **Minimum auction request:** one or multiple impressions, banner dimensions/compatibility fields, and the required advertising context. HTML banners are the sole v1 creative format; markup limits, allowed HTML/CSS/JavaScript, and renderer isolation remain open.
+1. **Minimum auction request:** domain syntax/normalization, exact optional ads.txt extension syntax and lookup/cache rules, final banner size fields/nesting, and additional compatibility fields. `site.domain` is required; `device` is optional with viewer IPs, geographic coordinates, and persistent device identifiers excluded from public requests. Ads.txt seller verification is an optional bidder participation rule. The `user` object is outside v1. V1 offers exactly one website impression with a nonempty list of accepted fixed sizes and supports HTML banners only; the shared rendering profile's precise capabilities and isolation rules remain open.
 2. **Identifiers:** how impression IDs and bid nonces are encoded. `bid_request_id` is agreed as the signed bid-request event's ID. The bid nonce must remain usable before signing the bid event that contains its pixel URL.
 3. **Discovery and delivery:** relay selection, request subscriptions by kind/author, gift-wrap subscriptions by recipient, and final inner routing/reference tags. Additional payload discovery tags are deferred.
-4. **Wire schemas:** remaining names, nesting, types, versioning, size limits, and unknown-field handling. `closes_at` is fixed as integer Unix seconds; auction duration policy remains open.
-5. **Keys and signatures:** recipient-key selection, publisher/oracle identity-to-payment-key binding, encryption version, and context serialization. The fresh refund-key signer, BIP-340 signature scheme, tagged digest, signed Nostr identity, and exact UTF-8 HTML creative hashing are agreed.
-6. **Validation and retries:** malformed and late bids, duplicate events, logical bid identity, proof reuse, and allowed retransmission behavior.
+4. **Wire schemas:** remaining names, nesting, types, versioning, numeric common request/bid size limits, their byte-counting boundaries, publisher-advertised smaller bid limits, and unknown-field handling. Common maximums and optional lower advertised limits are agreed. `closes_at` is an agreed upper bound in integer Unix seconds; early selection is allowed, with collection and stopping policy left to implementations.
+5. **Keys and signatures:** publisher identity-to-payment-key binding, publisher–oracle service authentication, recipient-key selection, encryption version, and context serialization. Bidders choose how to verify the trusted oracle binding before funding; no shared oracle attestation/discovery protocol is required in v1. The fresh refund-key signer, BIP-340 signature scheme, tagged digest, signed Nostr identity and creative dimensions, and exact UTF-8 HTML creative hashing are agreed.
+6. **Validation and retries:** remaining eligibility rules, malformed and late bids, duplicate events, nonce conflicts, proof-reuse detection, and exact retransmission deduplication. Multiple independent immutable bids per bidder and publisher-defined ranking/ties are agreed.
 7. **Kind registration:** publish the agreed experimental kind definitions once the schemas are settled.
 8. **Examples and fixtures:** complete request/bid examples, encryption and commitment test vectors, and invalid cases.
 
