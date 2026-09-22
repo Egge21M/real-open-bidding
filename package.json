@@ -9,11 +9,15 @@
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
     "dev": "bun run --filter @rob/protocol-homepage dev",
+    "dev:demo": "bun run --filter @rob/protocol-demo dev",
     "build": "bun run --workspaces build",
     "build:homepage": "bun run --filter @rob/protocol-homepage build",
+    "build:demo": "bun run --filter @rob/protocol-demo build",
+    "test:demo": "bun run --filter @rob/protocol-demo test",
     "lint": "bun run --workspaces lint",
     "typecheck": "bun run --workspaces typecheck",
     "format": "bun run --workspaces format",
-    "preview": "bun run --filter @rob/protocol-homepage preview"
+    "preview": "bun run --filter @rob/protocol-homepage preview",
+    "preview:demo": "bun run --filter @rob/protocol-demo preview"
   }
 }

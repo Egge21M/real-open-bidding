@@ -5,6 +5,7 @@ ROB is an open, prepaid real-time bidding protocol built on Nostr and Cashu. Thi
 ## Workspace
 
 - [`apps/protocol-homepage/`](apps/protocol-homepage/README.md): the public ROB homepage and specification reader, named `@rob/protocol-homepage` within the workspace. It explains the protocol; it has no publisher auction, wallet, or live bidding integration.
+- [`apps/protocol-demo/`](apps/protocol-demo/README.md): the interactive protocol lab, named `@rob/protocol-demo`. Replay requests, independently funded bids, oracle authorization, settlement and refunds; change participant choices and failure conditions. All network and cryptographic verification operations are simulated.
 - `apps/*`: independently runnable applications. The oracle, bidder, and publisher implementations will be added as they are built.
 - `packages/*`: shared libraries, including the future ROB protocol implementation. No shared library is scaffolded yet.
 
@@ -18,6 +19,8 @@ bun run dev
 ```
 
 `dev` starts the protocol homepage. `bun run preview` serves its production build locally.
+
+Run the protocol lab with `bun run dev:demo` (default port 5174). Use `bun run build:demo`, `bun run preview:demo`, and `bun run test:demo` to build, preview, and test it. See its [README](apps/protocol-demo/README.md) for controls, modeled requirements, and simulation boundaries.
 
 Run the workspace checks and build from the root:
 

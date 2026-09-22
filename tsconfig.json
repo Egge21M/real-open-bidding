@@ -2,6 +2,9 @@
   "files": [],
   "references": [
     {
+      "path": "./apps/protocol-demo/tsconfig.json"
+    },
+    {
       "path": "./apps/protocol-homepage/tsconfig.app.json"
     },
     {
