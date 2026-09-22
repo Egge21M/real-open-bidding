@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Workspace build and local configuration
+coverage/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example

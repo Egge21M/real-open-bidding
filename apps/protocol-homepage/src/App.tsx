@@ -37,9 +37,9 @@ import {
 import { Mark, ProtocolArtwork } from "@/components/protocol-artwork"
 import { FlowExplorer } from "@/components/flow-explorer"
 import { participants, trustQuestions } from "@/protocol"
-import flowUrl from "../../FLOW.md?url"
-import nostrUrl from "../../NOSTR.md?url"
-import openRtbUrl from "../../OPENRTB.md?url"
+import flowUrl from "../../../FLOW.md?url"
+import nostrUrl from "../../../NOSTR.md?url"
+import openRtbUrl from "../../../OPENRTB.md?url"
 
 const Specification = lazy(() => import("@/components/specification"))
 

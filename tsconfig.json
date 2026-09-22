@@ -1,0 +1,11 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "./apps/protocol-homepage/tsconfig.app.json"
+    },
+    {
+      "path": "./apps/protocol-homepage/tsconfig.node.json"
+    }
+  ]
+}

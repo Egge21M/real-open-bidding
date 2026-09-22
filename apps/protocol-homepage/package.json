@@ -1,15 +1,15 @@
 {
-  "name": "website",
+  "name": "@rob/protocol-homepage",
   "private": true,
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "format": "prettier --write \"**/*.{ts,tsx}\"",
-    "typecheck": "tsc --noEmit",
-    "preview": "vite preview"
+    "dev": "bun --bun vite",
+    "build": "bun --bun tsc -b && bun --bun vite build",
+    "lint": "bun --bun eslint .",
+    "format": "bun --bun prettier --write \"**/*.{ts,tsx}\"",
+    "typecheck": "bun --bun tsc -b",
+    "preview": "bun --bun vite preview"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",

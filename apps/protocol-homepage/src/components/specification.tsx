@@ -3,14 +3,15 @@ import type { ComponentProps, ReactNode } from "react"
 import Markdown from "react-markdown"
 import type { ExtraProps } from "react-markdown"
 import remarkGfm from "remark-gfm"
-import flow from "../../../FLOW.md?raw"
+import flow from "../../../../FLOW.md?raw"
 
 const references = import.meta.glob<string>(
   [
-    "../../../*.md",
-    "!../../../AGENTS.md",
-    "../../../docs/adr/*.md",
-    "../../../docs/agents/domain.md",
+    "../../../../*.md",
+    "!../../../../AGENTS.md",
+    "!../../../../README.md",
+    "../../../../docs/adr/*.md",
+    "../../../../docs/agents/domain.md",
   ],
   { query: "?url", import: "default", eager: true }
 )
@@ -50,7 +51,7 @@ export default function Specification() {
               return <a href={`#${fragment}`}>{children}</a>
             }
 
-            const referenceUrl = references[`../../../${path}`]
+            const referenceUrl = references[`../../../../${path}`]
             return referenceUrl ? (
               <a
                 href={referenceUrl}

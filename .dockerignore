@@ -1,6 +1,8 @@
 # Build from the repository root so the source specifications are included.
-# Only the website's build inputs are sent to the builder.
+# Only the protocol homepage's build inputs are sent to the builder.
 *
+!package.json
+!bun.lock
 !FLOW.md
 !NOSTR.md
 !CONTEXT.md
@@ -14,16 +16,17 @@ docs/*
 !docs/agents/
 docs/agents/*
 !docs/agents/domain.md
-!website/
-website/*
-!website/package.json
-!website/package-lock.json
-!website/tsconfig*.json
-!website/vite.config.ts
-!website/index.html
-!website/src/
-!website/src/**
-!website/public/
-!website/public/**
-!website/Dockerfile
-!website/nginx.conf
+!apps/
+apps/*
+!apps/protocol-homepage/
+apps/protocol-homepage/*
+!apps/protocol-homepage/package.json
+!apps/protocol-homepage/tsconfig*.json
+!apps/protocol-homepage/vite.config.ts
+!apps/protocol-homepage/index.html
+!apps/protocol-homepage/src/
+!apps/protocol-homepage/src/**
+!apps/protocol-homepage/public/
+!apps/protocol-homepage/public/**
+!apps/protocol-homepage/Dockerfile
+!apps/protocol-homepage/nginx.conf
