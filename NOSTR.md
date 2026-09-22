@@ -340,7 +340,7 @@ Proposed implementation rules to settle alongside the schemas:
 
 The authorization payload omits `amount_sat`. The oracle derives the gross authorized amount from the sum of the decoded proof amounts in `payment`. The publisher still checks the bidder-to-publisher declared amount against that total; this omission does not remove the amount requirement from the bid payload. See [FLOW.md: Publisher requests oracle authorization](FLOW.md#6-publisher-requests-oracle-authorization).
 
-The minimal payload proposal with these agreed choices is:
+The oracle MVP accepts the following authorization payload:
 
 ```ts
 type AuthorizationRequest = {
@@ -369,7 +369,7 @@ type AuthorizationRequest = {
 
 **Agreed 2026-09-22:** swap inputs are derived from the token instead of receiving a duplicate proof array. Traverse the token's keyset groups and each group's proofs in their encoded array order, without sorting, regrouping, or silently deduplicating them. Duplicate inputs are rejected. The publisher uses the same input order for its signature and mint submission. Mint-authenticated keyset-ID resolution remains publisher-owned; resolved keyset IDs are not required to compute the oracle's `SIG_ALL` signature.
 
-**Agreed 2026-09-22:** an otherwise valid initial request with no recorded matching callback returns an immediate, retryable `pixel_not_observed` result, without holding the request open or reserving the impression. The publisher can retry after the callback arrives. An exact retry of an already issued authorization returns the existing authorization. HTTP status codes and the error-envelope schema remain open. These responses belong to the publisher-to-oracle API and do not add bidder status messages.
+**Agreed 2026-09-22:** an otherwise valid initial request with no recorded matching callback returns an immediate, retryable `pixel_not_observed` result, without holding the request open or reserving the impression. The publisher can retry after the callback arrives. An exact retry of an already issued authorization returns the existing authorization. The MVP returns HTTP 409 with `{ "error": "pixel_not_observed" }`, as specified below. These responses belong to the publisher-to-oracle API and do not add bidder status messages.
 
 **Agreed 2026-09-22:** recorded callbacks are durable and have no automatic expiry in the MVP. An observation remains available after a restart or delay before the first authorization request, subject to all other checks. Callback cleanup is deferred; issued authorization bindings remain permanent. See [FLOW.md: Pixel observation](FLOW.md#5-publisher-renders-the-winning-creative).
 
@@ -391,7 +391,7 @@ The publisher verifies this signature against the oracle payment key using the e
 
 **Agreed 2026-09-22:** spending-signature representations and construction follow Cashu NUT-00 and NUT-11 directly, without a separate ROB canonicalization profile. The oracle and publisher must use compatible Cashu serialization so the mint receives the same signing message. ROB's creative/payment commitment remains a separate construction.
 
-API payload limits, HTTP error/status details, the remaining NIP-98 profile details, and the remaining wire-schema details still require agreement before this is an interoperable API.
+The oracle MVP HTTP and parsing profile below fixes its service limits, errors, and authentication URL handling. Common ROB request/bid transport limits and remaining adapter schemas are separate work.
 
 ### Oracle HTTP authentication
 
@@ -405,7 +405,15 @@ Authentication must succeed before the oracle creates an authorization binding o
 
 **Agreed 2026-09-22:** accept an authentication event when `abs(oracle_now - created_at) <= 60`, using Unix seconds from the oracle's clock at receipt. A valid authentication event may be reused for an identical HTTP request while it remains within that window; it is not a single-use credential. A later retry carries fresh NIP-98 authentication and, for the same already authorized bid and swap, returns the stored payment signature. Authentication is checked on retries too; freshness expiry does not remove an existing payment-authorization binding. These bounds and reuse rules are ROB's explicit profile of NIP-98's timestamp guidance.
 
-Duplicate-tag handling, public URL reconstruction behind proxies, endpoint method/path, and HTTP error schema remain open. Retry freshness checks remain distinct from payment-authorization idempotency.
+### Oracle MVP HTTP profile
+
+The [oracle implementation](apps/oracle/README.md) uses `POST /authorize` and public `GET /pixel/{bid_request_id}/{impression_id}/{bid_nonce}`. Both reject query strings and other methods. A configured public origin supplies the absolute authorization URL and pixel base; untrusted forwarding headers do not reconstruct that origin. NIP-98 requires exactly one two-element `u`, `method`, and `payload` tag and empty event content. Retry freshness checks remain distinct from payment-authorization idempotency.
+
+Authorization bodies use UTF-8 `application/json`, with a 2 MiB service limit and a 16 KiB NIP-98 header limit. The MVP rejects malformed Unicode, duplicate JSON keys, nesting beyond 64 levels, and unknown ROB fields; OpenRTB context remains extensible under its existing exclusions and Cashu V4 ignores unknown fields as NUT-00 requires. Output amounts are nonnegative safe JSON integers and blinded messages retain their supplied compressed-hex spelling; this is signing-data parsing, not output payment validation. Common ROB request/bid transport budgets remain open.
+
+A missing callback returns HTTP 409 with `{ "error": "pixel_not_observed" }`; conflicting authorization returns 409 with `{ "error": "authorization_conflict" }`. Other application errors use the same single `error` field, with statuses and codes enumerated in the [app HTTP contract](apps/oracle/README.md#http-contract). Success and application errors use `Cache-Control: no-store`. The pixel returns a transparent GIF after durable observation.
+
+Exact retry equality covers the nonce, full commitment including signature bytes, original token, ordered output signing data, and oracle payment key. HTTP JSON formatting and fresh authentication may differ. The implementation fixtures include a complete signed ROB authorization, pinned Cashu SIG_ALL vectors, failed persistence, concurrent requests/processes, and restarts. Mint settlement integration remains deferred to the publisher adapter.
 
 ## 6. Next decisions
 
@@ -418,4 +426,4 @@ Duplicate-tag handling, public URL reconstruction behind proxies, endpoint metho
 7. **Kind registration:** publish the agreed experimental kind definitions once the schemas are settled.
 8. **Examples and fixtures:** complete request/bid examples, encryption and commitment test vectors, and invalid cases.
 
-The oracle MVP authorizes swaps only and returns its Cashu spending signature using NUT-00/NUT-11 representations. Ordered outputs are fixed once authorized, and exact retries return the stored signature; payment validity belongs to the publisher. API payload limits remain open in FLOW.md. First-price pricing and the refund-key commitment design are agreed. The 2026-09-16 commitment decision supersedes the earlier proposal to sign the standalone commitment with the bidder's Nostr identity key.
+The oracle MVP authorizes swaps only and returns its Cashu spending signature using NUT-00/NUT-11 representations. Ordered outputs are fixed once authorized, and exact retries return the stored signature; payment validity belongs to the publisher. The HTTP profile above defines the oracle service limits; common ROB request/bid transport limits remain open in FLOW.md. First-price pricing and the refund-key commitment design are agreed. The 2026-09-16 commitment decision supersedes the earlier proposal to sign the standalone commitment with the bidder's Nostr identity key.

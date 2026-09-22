@@ -1,4 +1,4 @@
-import { parse, type DefaultTreeAdapterMap } from "parse5";
+import { parse, type DefaultTreeAdapterTypes } from "parse5";
 import { ZodError } from "zod";
 import { authenticate } from "./auth";
 import type { OracleConfig } from "./config";
@@ -60,7 +60,7 @@ async function readBody(request: Request): Promise<Uint8Array> {
 function hasPixel(html: string, expected: string): boolean {
   // Parse without fetching assets or executing scripts. Comments, scripts, and
   // template contents do not count as an embedded image.
-  const pending: DefaultTreeAdapterMap["node"][] = [parse(html)];
+  const pending: DefaultTreeAdapterTypes.Node[] = [parse(html)];
   while (pending.length) {
     const node = pending.pop()!;
     if (
@@ -69,7 +69,8 @@ function hasPixel(html: string, expected: string): boolean {
       node.attrs.some((a) => a.name === "src" && a.value === expected)
     )
       return true;
-    if ("childNodes" in node) pending.push(...node.childNodes);
+    if ("childNodes" in node)
+      for (const child of node.childNodes) pending.push(child);
   }
   return false;
 }

@@ -9,6 +9,9 @@
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
     "dev": "bun run --filter @rob/protocol-homepage dev",
+    "dev:oracle": "bun run --filter @rob/oracle dev",
+    "start:oracle": "bun run --filter @rob/oracle start",
+    "test": "bun run --filter @rob/oracle test",
     "build": "bun run --workspaces build",
     "build:homepage": "bun run --filter @rob/protocol-homepage build",
     "lint": "bun run --workspaces lint",

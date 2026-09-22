@@ -9,8 +9,8 @@
     "build": "bun build src/index.ts --target bun --packages external --outdir dist",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
-    "lint": "prettier --check src drizzle.config.ts",
-    "format": "prettier --write src drizzle.config.ts",
+    "lint": "prettier --check src test drizzle.config.ts",
+    "format": "prettier --write src test drizzle.config.ts",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {

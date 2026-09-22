@@ -1,0 +1,38 @@
+{
+  "auth": {
+    "request": {
+      "kind": 28300,
+      "created_at": 1799999990,
+      "tags": [],
+      "content": "{\"version\":1,\"impression_id\":\"imp-1\",\"banner_sizes\":[{\"width\":300,\"height\":250}],\"site\":{\"domain\":\"publisher.example\"},\"closes_at\":1799999995,\"mints\":[\"https://mint.example\"],\"publisher_payment_pubkey\":\"02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5\",\"oracle\":{\"pubkey\":\"e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd13\",\"payment_pubkey\":\"02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9\",\"pixel_base\":\"https://oracle.example/pixel\"}}",
+      "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "id": "322306e5c2f53ff36c12ce2945ce04dea8eb4952921fab10a5066146f6f31ef5",
+      "sig": "a29633aad8516453a25e4835bf7a99ef40c815d539bafbf1fbdb3a453c76bb8ede2d8e89c899bffe601f42071c89772909ab9b469872e2d043031d6132b8122a"
+    },
+    "payment": "cashuBo2FtdGh0dHBzOi8vbWludC5leGFtcGxlYXSComFpSAAAAAAAAAABYXCBo2FhBGFjWCECLwHl4VzKNR2v84Q_tw88Lwob3QXlr4iKZ3hO8-EKKgFhc3kBhlsiUDJQSyIseyJub25jZSI6ImZpcnN0LTAwMTEyMjMzNDQ1NTY2Nzc4ODk5YWFiYmNjZGRlZWZmIiwiZGF0YSI6IjAyYzYwNDdmOTQ0MWVkN2Q2ZDMwNDU0MDZlOTVjMDdjZDg1Yzc3OGU0YjhjZWYzY2E3YWJhYzA5Yjk1YzcwOWVlNSIsInRhZ3MiOltbInB1YmtleXMiLCIwMmY5MzA4YTAxOTI1OGMzMTA0OTM0NGY4NWY4OWQ1MjI5YjUzMWM4NDU4MzZmOTliMDg2MDFmMTEzYmNlMDM2ZjkiXSxbIm5fc2lncyIsIjIiXSxbInNpZ2ZsYWciLCJTSUdfQUxMIl0sWyJsb2NrdGltZSIsIjE4MDAwMDAwMzAiXSxbInJlZnVuZCIsIjAzZmZmOTdiZDU3NTVlZWVhNDIwNDUzYTE0MzU1MjM1ZDM4MmY2NDcyZjg1NjhhMThiMmYwNTdhMTQ2MDI5NzU1NiJdLFsibl9zaWdzX3JlZnVuZCIsIjEiXV19XaJhaVghAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACYXCBo2FhBGFjWCEDrNSE4vDH9lMJrReKn1WaveCXlpdMV-cUw18RDfwnzL5hc3kBh1siUDJQSyIseyJub25jZSI6InNlY29uZC0wMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiIsImRhdGEiOiIwMmM2MDQ3Zjk0NDFlZDdkNmQzMDQ1NDA2ZTk1YzA3Y2Q4NWM3NzhlNGI4Y2VmM2NhN2FiYWMwOWI5NWM3MDllZTUiLCJ0YWdzIjpbWyJwdWJrZXlzIiwiMDJmOTMwOGEwMTkyNThjMzEwNDkzNDRmODVmODlkNTIyOWI1MzFjODQ1ODM2Zjk5YjA4NjAxZjExM2JjZTAzNmY5Il0sWyJuX3NpZ3MiLCIyIl0sWyJzaWdmbGFnIiwiU0lHX0FMTCJdLFsibG9ja3RpbWUiLCIxODAwMDAwMDMwIl0sWyJyZWZ1bmQiLCIwM2ZmZjk3YmQ1NzU1ZWVlYTQyMDQ1M2ExNDM1NTIzNWQzODJmNjQ3MmY4NTY4YTE4YjJmMDU3YTE0NjAyOTc1NTYiXSxbIm5fc2lnc19yZWZ1bmQiLCIxIl1dfV1hdWNzYXQ",
+    "bid_nonce": "00112233445566778899aabbccddeeff",
+    "creative": {
+      "content": "<p>Example ☃</p><img src=\"https://oracle.example/pixel/322306e5c2f53ff36c12ce2945ce04dea8eb4952921fab10a5066146f6f31ef5/imp-1/00112233445566778899aabbccddeeff\" width=\"1\" height=\"1\">",
+      "width": 300,
+      "height": 250
+    },
+    "commitment": {
+      "bidder_pubkey": "2f8bde4d1a07209355b4a7250a5c5128e88b84bddc619ab7cba8d569b240efe4",
+      "creative_hash": "b44ac67f9ad5b5a2d8460efa7f5994b4d3a23af603f65d593a657af5d34977df",
+      "payment_hash": "0aa94c15b0834457784d462e07bd43bb2906f4bbeaf9ec528b03cae2d0384e02",
+      "sig": "4c6092d1a002fa0d0f73f3804c531ff7d566d5705b2e6d6218eda6e3710260749eb4b69f13b888d95adaa88eef945746e167243939cba7f3a81e45752be1de93"
+    },
+    "outputs": [
+      {
+        "amount": 4,
+        "B_": "03a0434d9e47f3c86235477c7b1ae6ae5d3442d49b1943c2b752a68e2a47e247c7"
+      },
+      {
+        "amount": 3,
+        "B_": "03774ae7f858a9411e5ef4246b70c65aac5649980be5c17891bbec17895da008cb"
+      }
+    ]
+  },
+  "pixelUrl": "https://oracle.example/pixel/322306e5c2f53ff36c12ce2945ce04dea8eb4952921fab10a5066146f6f31ef5/imp-1/00112233445566778899aabbccddeeff",
+  "httpAuthorization": "Nostr eyJraW5kIjoyNzIzNSwiY3JlYXRlZF9hdCI6MTgwMDAwMDAwMCwiY29udGVudCI6IiIsInRhZ3MiOltbInUiLCJodHRwczovL29yYWNsZS5leGFtcGxlL2F1dGhvcml6ZSJdLFsibWV0aG9kIiwiUE9TVCJdLFsicGF5bG9hZCIsIjI1M2JiZTE4MGFmYWNlOWQ4YWQ2ZWViYzFhYzBhNjY4MmFlZGMxZDdmZWU1ZjJkOGNlN2JiOGU0MTE5NDM1ZTkiXV0sInB1YmtleSI6Ijc5YmU2NjdlZjlkY2JiYWM1NWEwNjI5NWNlODcwYjA3MDI5YmZjZGIyZGNlMjhkOTU5ZjI4MTViMTZmODE3OTgiLCJpZCI6IjRlOGFlMjcyOGI0ZmJiMTc4YmRiYWQ5YmQwNDM2MTg4OWM3NzVkYWIzZWE4OGQ1ZmM1YWFhNjIyODdiNWU0ZDkiLCJzaWciOiJmOThhMTBjZDVhMTRmZjM1M2ZkYzUxZDU0N2IyOTlhM2VhODFiY2YzYTE5OTQzNWNjNmZhMDc2ZWZiNjBkNzg3NDY4Mzk0ZDA1ZGM1MmRjNzczOTEyNDQ1ZjIwNTNkMDUwYWYzZGQwMmQwOWZlMzI2YTY0NDEzNzUyZGNkMDIwMyJ9"
+}

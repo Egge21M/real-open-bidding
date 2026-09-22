@@ -1,8 +1,17 @@
 import { z } from "zod";
+import { secp256k1 } from "@noble/curves/secp256k1.js";
 
 export const hex32 = z.string().regex(/^[0-9a-f]{64}$/);
 export const signature = z.string().regex(/^[0-9a-f]{128}$/);
 export const compressedKey = z.string().regex(/^(02|03)[0-9a-fA-F]{64}$/);
+const paymentKey = compressedKey.refine((value) => {
+  try {
+    secp256k1.Point.fromHex(value).assertValidity();
+    return true;
+  } catch {
+    return false;
+  }
+});
 export const impressionId = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/);
 export const bidNonce = z.string().regex(/^[0-9a-f]{32}$/);
 const dimension = z.int().positive();
@@ -57,10 +66,10 @@ export const bidRequestSchema = z
     device: z.record(z.string(), z.unknown()).optional(),
     closes_at: z.int().nonnegative(),
     mints: z.array(mintUrl).min(1),
-    publisher_payment_pubkey: compressedKey,
+    publisher_payment_pubkey: paymentKey,
     oracle: z.strictObject({
       pubkey: hex32,
-      payment_pubkey: compressedKey,
+      payment_pubkey: paymentKey,
       pixel_base: httpUrl.refine((s) => !s.endsWith("/") && !new URL(s).search),
     }),
   })

@@ -18,6 +18,11 @@ export function authenticate(
     );
     const encoded = header.slice(6);
     requireCondition(
+      !encoded.includes("=") || encoded.length % 4 === 0,
+      "unauthorized",
+      401,
+    );
+    requireCondition(
       /^[A-Za-z0-9+/]+={0,2}$/.test(encoded),
       "unauthorized",
       401,
