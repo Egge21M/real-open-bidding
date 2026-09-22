@@ -29,3 +29,8 @@ coverage/
 .env
 .env.*
 !.env.example
+publisher.json
+mint-keys.local.json
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm

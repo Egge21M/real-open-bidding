@@ -1,0 +1,21 @@
+{
+  "name": "@rob/publisher-sdk",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "ROB publisher SDK for modern browsers",
+  "sideEffects": false,
+  "files": ["dist", "README.md"],
+  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
+  "scripts": {
+    "build": "bun build src/index.ts --target browser --format esm --minify --outdir dist && tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test test",
+    "lint": "prettier --check src test",
+    "format": "prettier --write src test"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.2",
+    "prettier": "3.9.8",
+    "typescript": "~6"
+  }
+}

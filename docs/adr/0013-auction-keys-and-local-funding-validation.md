@@ -1,0 +1,5 @@
+# Accept funding with auction-specific payment keys and local validation
+
+The default publisher derives a fresh payment keypair for each new auction and requires DLEQ verification against saved authenticated mint keysets plus the existing 2-of-2 publisher/oracle locks and local eligibility checks. Before refund eligibility, authentic correctly locked proofs need that publisher key's signature to spend, so fresh keys and local signing state let this publisher omit online mint spend-state queries during bid acceptance. This removes a per-bid network dependency while requiring durable auction-key recovery, supported DLEQ funding, and duplicate/proof-reuse checks, and it does not prevent the bidder's independent refund path from racing with later settlement.
+
+Agreed on 2026-09-22. The default validation profile is in [FLOW.md](../../FLOW.md#default-publisher-funding-validation), with implementation responsibilities in [PUBLISHER.md](../../PUBLISHER.md#auction-payment-keys-and-local-funding-validation). The publisher/oracle responsibility split in [ADR-0007](0007-oracle-local-authorization.md) is preserved; no oracle-side mint or DLEQ validation is added.

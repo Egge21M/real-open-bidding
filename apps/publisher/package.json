@@ -1,0 +1,37 @@
+{
+  "name": "@rob/publisher",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "wallet": "bun src/wallet.ts",
+    "mint-keys": "bun src/mint-keys.ts",
+    "build": "bun build src/index.ts --target bun --packages external --outdir dist",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test test",
+    "test:browser": "bun test/browser.ts",
+    "lint": "prettier --check src test drizzle.config.ts",
+    "format": "prettier --write src test drizzle.config.ts",
+    "db:generate": "drizzle-kit generate"
+  },
+  "dependencies": {
+    "@noble/curves": "2.4.0",
+    "cborg": "6.1.2",
+    "drizzle-orm": "0.45.3",
+    "jsonc-parser": "3.3.1",
+    "lightningcss": "1.33.0",
+    "nostr-tools": "2.23.3",
+    "parse5": "8.0.1",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@rob/publisher-sdk": "workspace:*",
+    "@types/bun": "1.4.2",
+    "drizzle-kit": "0.31.11",
+    "playwright": "1.63.0",
+    "prettier": "3.9.8",
+    "typescript": "~6"
+  }
+}
