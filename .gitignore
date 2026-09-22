@@ -25,6 +25,7 @@ dist-ssr
 
 # Workspace build and local configuration
 coverage/
+apps/oracle/data/
 *.tsbuildinfo
 .env
 .env.*

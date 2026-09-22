@@ -57,12 +57,18 @@ export function decodePayment(payment: string) {
     "invalid_payment",
   );
   const encoded = payment.slice(6);
+  requireCondition(
+    !encoded.includes("=") || encoded.length % 4 === 0,
+    "invalid_payment",
+  );
   const raw = new Uint8Array(Buffer.from(encoded, "base64url"));
   requireCondition(
     Buffer.from(raw).toString("base64url") === encoded.replace(/=+$/, ""),
     "invalid_payment",
   );
   const options = {
+    allowBigInt: true,
+    allowIndefinite: true,
     rejectDuplicateMapKeys: true,
     allowUndefined: false,
     allowNaN: false,
@@ -151,10 +157,15 @@ export function verifyPayment(
           "invalid_payment_conditions",
         );
         requireCondition(
-          positiveInteger(single("n_sigs_refund")) === 1n,
+          positiveInteger(
+            tags.has("n_sigs_refund") ? single("n_sigs_refund") : "1",
+          ) === 1n,
           "invalid_payment_conditions",
         );
-        positiveInteger(single("locktime"));
+        requireCondition(
+          /^[0-9]+$/.test(single("locktime")),
+          "invalid_payment_conditions",
+        );
         const dataKey = keyIdentity(secret.data);
         const additionalKey = keyIdentity(
           compressedKey.parse(single("pubkeys")),

@@ -5,8 +5,7 @@ ROB is an open, prepaid real-time bidding protocol built on Nostr and Cashu. Thi
 ## Workspace
 
 - [`apps/protocol-homepage/`](apps/protocol-homepage/README.md): the public ROB homepage and specification reader, named `@rob/protocol-homepage` within the workspace. It explains the protocol; it has no publisher auction, wallet, or live bidding integration.
-- [`apps/oracle/`](apps/oracle/): the initial oracle service, named `@rob/oracle`, with NIP-98 authorization, Cashu signing, and SQLite persistence. Oracle conformance tests are still to be added.
-- `apps/*`: independently runnable applications. Bidder and publisher implementations will be added as they are built.
+- [`apps/oracle/`](apps/oracle/README.md): the standalone Bun oracle, with Zod validation and Drizzle over `bun:sqlite`. Bidder and publisher adapters will follow.
 - `packages/*`: shared libraries, including the future ROB protocol implementation. No shared library is scaffolded yet.
 
 ## Oracle MVP

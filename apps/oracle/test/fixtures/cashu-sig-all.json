@@ -1,0 +1,112 @@
+{
+  "source": "https://github.com/cashubtc/nuts/blob/8f244be801a7de5811bd230cc4bc78439f4948dc/tests/11-test.md#sig_all-test-vectors",
+  "first_digest": "de7f9e3ca0fcc5ed3258fcf83dbf1be7fa78a5ed6da7bf2aa60d61e9dc6eb09a",
+  "swaps": [
+    {
+      "inputs": [
+        {
+          "amount": 2,
+          "id": "00bfa73302d12ffd",
+          "secret": "[\"P2PK\",{\"nonce\":\"c7f280eb55c1e8564e03db06973e94bc9b666d9e1ca42ad278408fe625950303\",\"data\":\"030d8acedfe072c9fa449a1efe0817157403fbec460d8e79f957966056e5dd76c1\",\"tags\":[[\"sigflag\",\"SIG_ALL\"]]}]",
+          "C": "02c97ee3d1db41cf0a3ddb601724be8711a032950811bf326f8219c50c4808d3cd",
+          "witness": "{\"signatures\":[\"ce017ca25b1b97df2f72e4b49f69ac26a240ce14b3690a8fe619d41ccc42d3c1282e073f85acd36dc50011638906f35b56615f24e4d03e8effe8257f6a808538\"]}"
+        }
+      ],
+      "outputs": [
+        {
+          "amount": 2,
+          "id": "00bfa73302d12ffd",
+          "B_": "038ec853d65ae1b79b5cdbc2774150b2cb288d6d26e12958a16fb33c32d9a86c39"
+        }
+      ]
+    },
+    {
+      "inputs": [
+        {
+          "amount": 2,
+          "id": "00bfa73302d12ffd",
+          "secret": "[\"P2PK\",{\"nonce\":\"c7f280eb55c1e8564e03db06973e94bc9b666d9e1ca42ad278408fe625950303\",\"data\":\"030d8acedfe072c9fa449a1efe0817157403fbec460d8e79f957966056e5dd76c1\",\"tags\":[[\"sigflag\",\"SIG_ALL\"]]}]",
+          "C": "02c97ee3d1db41cf0a3ddb601724be8711a032950811bf326f8219c50c4808d3cd",
+          "witness": "{\"signatures\":[\"ce017ca25b1b97df2f72e4b49f69ac26a240ce14b3690a8fe619d41ccc42d3c1282e073f85acd36dc50011638906f35b56615f24e4d03e8effe8257f6a808538\"]}"
+        }
+      ],
+      "outputs": [
+        {
+          "amount": 2,
+          "id": "00bfa73302d12ffd",
+          "B_": "038ec853d65ae1b79b5cdbc2774150b2cb288d6d26e12958a16fb33c32d9a86c39"
+        }
+      ]
+    },
+    {
+      "inputs": [
+        {
+          "amount": 1,
+          "id": "00bfa73302d12ffd",
+          "secret": "[\"P2PK\",{\"nonce\":\"fa6dd3fac9086c153878dec90b9e37163d38ff2ecf8b37db6470e9d185abbbae\",\"data\":\"033b42b04e659fed13b669f8b16cdaffc3ee5738608810cf97a7631d09bd01399d\",\"tags\":[[\"sigflag\",\"SIG_ALL\"]]}]",
+          "C": "024d232312bab25af2e73f41d56864d378edca9109ae8f76e1030e02e585847786",
+          "witness": "{\"signatures\":[\"27b4d260a1186e3b62a26c0d14ffeab3b9f7c3889e78707b8fd3836b473a00601afbd53a2288ad20a624a8bbe3344453215ea075fc0ce479dd8666fd3d9162cc\"]}"
+        },
+        {
+          "amount": 2,
+          "id": "00bfa73302d12ffd",
+          "secret": "[\"P2PK\",{\"nonce\":\"4007b21fc5f5b1d4920bc0a08b158d98fd0fb2b0b0262b57ff53c6c5d6c2ae8c\",\"data\":\"033b42b04e659fed13b669f8b16cdaffc3ee5738608810cf97a7631d09bd01399d\",\"tags\":[[\"locktime\",\"122222222222222\"],[\"sigflag\",\"SIG_ALL\"]]}]",
+          "C": "02417400f2af09772219c831501afcbab4efb3b2e75175635d5474069608deb641"
+        }
+      ],
+      "outputs": [
+        {
+          "amount": 1,
+          "id": "00bfa73302d12ffd",
+          "B_": "038ec853d65ae1b79b5cdbc2774150b2cb288d6d26e12958a16fb33c32d9a86c39"
+        },
+        {
+          "amount": 1,
+          "id": "00bfa73302d12ffd",
+          "B_": "03afe7c87e32d436f0957f1d70a2bca025822a84a8623e3a33aed0a167016e0ca5"
+        },
+        {
+          "amount": 1,
+          "id": "00bfa73302d12ffd",
+          "B_": "02c0d4fce02a7a0f09e3f1bca952db910b17e81a7ebcbce62cd8dcfb127d21e37b"
+        }
+      ]
+    },
+    {
+      "inputs": [
+        {
+          "amount": 2,
+          "id": "00bfa73302d12ffd",
+          "secret": "[\"P2PK\",{\"nonce\":\"04bfd885fc982d553711092d037fdceb7320fd8f96b0d4fd6d31a65b83b94272\",\"data\":\"0275e78025b558dbe6cb8fdd032a2e7613ca14fda5c1f4c4e3427f5077a7bd90e4\",\"tags\":[[\"pubkeys\",\"035163650bbd5ed4be7693f40f340346ba548b941074e9138b67ef6c42755f3449\",\"02817d22a8edc44c4141e192995a7976647c335092199f9e076a170c7336e2f5cc\"],[\"n_sigs\",\"2\"],[\"sigflag\",\"SIG_ALL\"]]}]",
+          "C": "03866a09946562482c576ca989d06371e412b221890804c7da8887d321380755be",
+          "witness": "{\"signatures\":[\"be1d72c5ca16a93c5a34f25ec63ce632ddc3176787dac363321af3fd0f55d1927e07451bc451ffe5c682d76688ea9925d7977dffbb15bd79763b527f474734b0\",\"669d6d10d7ed35395009f222f6c7bdc28a378a1ebb72ee43117be5754648501da3bedf2fd6ff0c7849ac92683538c60af0af504102e40f2d8daca8e08b1ca16b\"]}"
+        }
+      ],
+      "outputs": [
+        {
+          "amount": 2,
+          "id": "00bfa73302d12ffd",
+          "B_": "038ec853d65ae1b79b5cdbc2774150b2cb288d6d26e12958a16fb33c32d9a86c39"
+        }
+      ]
+    },
+    {
+      "inputs": [
+        {
+          "amount": 2,
+          "id": "00bfa73302d12ffd",
+          "secret": "[\"P2PK\",{\"nonce\":\"9ea35553beb18d553d0a53120d0175a0991ca6109370338406eed007b26eacd1\",\"data\":\"02af21e09300af92e7b48c48afdb12e22933738cfb9bba67b27c00c679aae3ec25\",\"tags\":[[\"locktime\",\"1\"],[\"refund\",\"02637c19143c58b2c58bd378400a7b82bdc91d6dedaeb803b28640ef7d28a887ac\",\"0345c7fdf7ec7c8e746cca264bf27509eb4edb9ac421f8fbfab1dec64945a4d797\"],[\"n_sigs_refund\",\"2\"],[\"sigflag\",\"SIG_ALL\"]]}]",
+          "C": "03dd83536fbbcbb74ccb3c87147df26753fd499cc2c095f74367fff0fb459c312e",
+          "witness": "{\"signatures\":[\"23b58ef28cd22f3dff421121240ddd621deee83a3bc229fd67019c2e338d91e2c61577e081e1375dbab369307bba265e887857110ca3b4bd949211a0a298805f\",\"7e75948ef1513564fdcecfcbd389deac67c730f7004f8631ba90c0844d3e8c0cf470b656306877df5141f65fd3b7e85445a8452c3323ab273e6d0d44843817ed\"]}"
+        }
+      ],
+      "outputs": [
+        {
+          "amount": 2,
+          "id": "00bfa73302d12ffd",
+          "B_": "038ec853d65ae1b79b5cdbc2774150b2cb288d6d26e12958a16fb33c32d9a86c39"
+        }
+      ]
+    }
+  ]
+}
