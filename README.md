@@ -5,8 +5,19 @@ ROB is an open, prepaid real-time bidding protocol built on Nostr and Cashu. Thi
 ## Workspace
 
 - [`apps/protocol-homepage/`](apps/protocol-homepage/README.md): the public ROB homepage and specification reader, named `@rob/protocol-homepage` within the workspace. It explains the protocol; it has no publisher auction, wallet, or live bidding integration.
-- `apps/*`: independently runnable applications. The oracle, bidder, and publisher implementations will be added as they are built.
+- [`apps/oracle/`](apps/oracle/): the initial oracle service, named `@rob/oracle`, with NIP-98 authorization, Cashu signing, and SQLite persistence. Oracle conformance tests are still to be added.
+- `apps/*`: independently runnable applications. Bidder and publisher implementations will be added as they are built.
 - `packages/*`: shared libraries, including the future ROB protocol implementation. No shared library is scaffolded yet.
+
+## Oracle MVP
+
+The first implementation milestone is an oracle that verifies a creative/payment commitment, observes the matching pixel callback, and issues payment authorization after the required checks pass. The existing [oracle verification rules](FLOW.md#6-publisher-requests-oracle-authorization), including authorization of at most one bid per impression, apply to this milestone.
+
+The MVP uses a [NIP-98-authenticated HTTPS authorization endpoint](NOSTR.md#oracle-http-authentication) and signs publisher-supplied Cashu swaps. It performs [local authorization checks](FLOW.md#oracle-mvp-validation-boundary) without mint calls; the publisher owns funding authenticity, keyset-unit validation, and spendability checks.
+
+Recorded pixel callbacks persist across restarts without automatic expiry in the MVP. Issued authorization bindings remain permanent, and exact retries return the stored signature. Callback cleanup is deferred.
+
+The oracle's deliverable ends at payment authorization. The bidder and publisher adapters will be built afterwards; funding, settlement, and refund interactions with the mint belong to those participants. Full end-to-end integration testing will follow once those pieces are available and is not a completion requirement for the standalone oracle milestone.
 
 ## Develop
 

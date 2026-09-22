@@ -60,7 +60,7 @@ The association between an oracle's identity, its payment key, and its pixel end
 A request received by the oracle at the pixel URL associated with a bid. It is a delivery signal and does not establish that the creative was displayed or viewable.
 
 **Payment authorization**:
-The oracle's approval for the publisher to spend a bid's locked funds. Authorization precedes settlement and can exist even when settlement never completes.
+The oracle's approval for the publisher to spend a bid's locked funds in a particular spending transaction. Authorization precedes settlement and does not certify funding authenticity, current spendability, or completed payment.
 
 **Settlement**:
 The mint's completed processing of an authorized bid payment, making its proceeds available to the publisher.
